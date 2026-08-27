@@ -1,0 +1,25 @@
+{
+  "name": "Hanagumori.UnityPmx.Editor.Tests",
+  "rootNamespace": "Hanagumori.UnityPmx.Tests",
+  "references": [
+    "Hanagumori.UnityPmx.Format",
+    "Hanagumori.UnityPmx.Runtime",
+    "Hanagumori.UnityPmx.Editor"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": false,
+  "defineConstraints": [
+    "UNITY_INCLUDE_TESTS"
+  ],
+  "versionDefines": [],
+  "noEngineReferences": false,
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ]
+}

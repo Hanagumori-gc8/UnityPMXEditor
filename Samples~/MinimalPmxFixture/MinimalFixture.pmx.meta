@@ -1,0 +1,21 @@
+fileFormatVersion: 2
+guid: 7ad7272f620d4fd45be54beb98130e09
+ScriptedImporter:
+  internalIDToNameTable: []
+  externalObjects: {}
+  serializedVersion: 2
+  userData:
+  assetBundleName:
+  assetBundleVariant:
+  script: {fileID: 11500000, guid: a0720f78fe3a8cd408841bb1444b64dd, type: 3}
+  settings:
+    scale: 0.1
+    advancedDeformMode: 2
+    runtimeCapability: 0
+    mmdCompatibilityFallback: 0
+    physicsMode: 0
+    physicsSettings:
+      jointDamper: 1
+      minimumMass: 0.001
+      maxDepenetrationVelocity: 10
+      enableOnInstantiate: 1

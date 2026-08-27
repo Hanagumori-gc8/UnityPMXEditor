@@ -1,0 +1,25 @@
+{
+  "name": "com.hanagumori.unity-pmx-editor",
+  "version": "0.1.0",
+  "displayName": "Unity PMX Editor",
+  "description": "Imports PMX model files into the Unity Editor.",
+  "unity": "2022.3",
+  "license": "MIT",
+  "author": {
+    "name": "Hanagumori-gc8",
+    "url": "https://github.com/Hanagumori-gc8"
+  },
+  "keywords": [
+    "pmx",
+    "mmd",
+    "model",
+    "importer"
+  ],
+  "samples": [
+    {
+      "displayName": "Minimal PMX Fixture",
+      "description": "A self-authored triangle PMX for import and reimport validation.",
+      "path": "Samples~/MinimalPmxFixture"
+    }
+  ]
+}

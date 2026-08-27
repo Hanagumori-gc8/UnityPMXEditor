@@ -1,0 +1,12 @@
+/Resources/
+/Resources.meta
+/.idea/
+/.vs/
+/Library/
+/Logs/
+/Logs.meta
+/obj/
+/Temp/
+/UserSettings/
+*.csproj
+*.sln

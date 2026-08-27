@@ -1,0 +1,85 @@
+using System;
+using System.Linq;
+using UnityEditor;
+using UnityEngine;
+
+namespace Hanagumori.UnityPmx
+{
+    [CustomEditor(typeof(PmxModelAsset))]
+    public sealed class PmxModelAssetInspector : UnityEditor.Editor
+    {
+        private bool showMorphs = true;
+        private bool showDiagnostics = true;
+
+        public override void OnInspectorGUI()
+        {
+            var asset = (PmxModelAsset)target;
+            EditorGUILayout.LabelField("PMX Model Asset", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("Schema Version", asset.SchemaVersion.ToString());
+            EditorGUILayout.LabelField("PMX Version", asset.PmxVersion.ToString("0.0"));
+            EditorGUILayout.LabelField("Original Name", asset.ModelName ?? string.Empty);
+            EditorGUILayout.LabelField("English Name", asset.EnglishModelName ?? string.Empty);
+            EditorGUILayout.LabelField("Vertices", asset.VertexCount.ToString());
+            EditorGUILayout.LabelField("Surfaces", asset.SurfaceCount.ToString());
+
+            EditorGUILayout.Space();
+            EditorGUILayout.LabelField("Support Status", EditorStyles.boldLabel);
+            DrawStatus(asset, PmxFeatureSupportStatus.Supported, new Color(0.25f, 0.65f, 0.35f));
+            DrawStatus(asset, PmxFeatureSupportStatus.Approximated, new Color(0.85f, 0.65f, 0.2f));
+            DrawStatus(asset, PmxFeatureSupportStatus.Preserved, new Color(0.3f, 0.55f, 0.8f));
+            DrawStatus(asset, PmxFeatureSupportStatus.Rejected, new Color(0.8f, 0.25f, 0.25f));
+            DrawStatus(asset, PmxFeatureSupportStatus.Unsupported, new Color(0.55f, 0.55f, 0.55f));
+
+            EditorGUILayout.Space();
+            EditorGUILayout.LabelField("Preserved Sections", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("Bones / IK", asset.BoneMetadata.Length.ToString());
+            EditorGUILayout.LabelField("Materials", asset.MaterialMetadata.Length.ToString());
+            EditorGUILayout.LabelField("Morphs", asset.MorphMetadata.Length.ToString());
+            EditorGUILayout.LabelField("Display Frames", asset.DisplayFrameMetadata.Length.ToString());
+            EditorGUILayout.LabelField("Rigid Bodies", asset.RigidBodyMetadata.Length.ToString());
+            EditorGUILayout.LabelField("Joints", asset.JointMetadata.Length.ToString());
+            EditorGUILayout.LabelField("Soft Bodies", asset.SoftBodyMetadata.Length.ToString());
+            EditorGUILayout.LabelField("Physics Import", asset.PhysicsImportMode.ToString());
+
+            showMorphs = EditorGUILayout.Foldout(showMorphs, "Morph Support", true);
+            if (showMorphs)
+            {
+                EditorGUI.indentLevel++;
+                for (int i = 0; i < asset.MorphMetadata.Length; i++)
+                {
+                    PmxMorphMetadata morph = asset.MorphMetadata[i];
+                    string sourceName = string.IsNullOrEmpty(morph.EnglishName) ? morph.Name : morph.EnglishName;
+                    EditorGUILayout.LabelField($"{i:D4} {sourceName}",
+                        $"{morph.SupportStatus}  BlendShape={morph.BlendShapeIndex}");
+                }
+                EditorGUI.indentLevel--;
+            }
+
+            showDiagnostics = EditorGUILayout.Foldout(showDiagnostics, "Import Diagnostics", true);
+            if (showDiagnostics)
+            {
+                EditorGUI.indentLevel++;
+                foreach (PmxImportDiagnostic diagnostic in asset.Diagnostics)
+                {
+                    MessageType type = diagnostic.Severity == PmxDiagnosticSeverity.Error
+                        ? MessageType.Error
+                        : diagnostic.Severity == PmxDiagnosticSeverity.Warning
+                            ? MessageType.Warning
+                            : MessageType.Info;
+                    EditorGUILayout.HelpBox(
+                        $"[{diagnostic.Status}] {diagnostic.Code}: {diagnostic.Message}", type);
+                }
+                EditorGUI.indentLevel--;
+            }
+        }
+
+        private static void DrawStatus(PmxModelAsset asset, PmxFeatureSupportStatus status, Color color)
+        {
+            int count = asset.Diagnostics.Count(value => value.Status == status);
+            Color previous = GUI.color;
+            GUI.color = color;
+            EditorGUILayout.LabelField(status.ToString(), count.ToString(), EditorStyles.helpBox);
+            GUI.color = previous;
+        }
+    }
+}

@@ -1,0 +1,19 @@
+{
+  "name": "Hanagumori.UnityPmx.Editor",
+  "rootNamespace": "Hanagumori.UnityPmx",
+  "references": [
+    "Hanagumori.UnityPmx.Format",
+    "Hanagumori.UnityPmx.Runtime"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

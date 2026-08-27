@@ -1,0 +1,16 @@
+{
+  "name": "Hanagumori.UnityPmx.Runtime",
+  "rootNamespace": "Hanagumori.UnityPmx",
+  "references": [
+    "Hanagumori.UnityPmx.Format"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

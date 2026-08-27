@@ -1,0 +1,12 @@
+* text=auto
+
+*.asmdef text eol=lf
+*.cs text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.meta text eol=lf
+*.txt text eol=lf
+
+*.bmp binary
+*.pmx binary
+*.png binary
