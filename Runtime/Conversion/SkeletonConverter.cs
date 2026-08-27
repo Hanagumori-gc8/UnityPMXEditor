@@ -13,12 +13,39 @@ namespace Hanagumori.UnityPmx
             Bones = bones;
             RootBone = rootBone;
             Bindposes = bindposes;
+            RendererBones = bones;
+            RendererBindposes = bindposes;
         }
 
         public Transform SkeletonRoot { get; }
         public Transform[] Bones { get; }
         public Transform RootBone { get; }
         public Matrix4x4[] Bindposes { get; }
+        public Transform[] RendererBones { get; private set; }
+        public Matrix4x4[] RendererBindposes { get; private set; }
+        public Transform PreservedDeformAnchor { get; private set; }
+
+        internal int EnsurePreservedDeformAnchor(Transform modelRoot)
+        {
+            if (modelRoot == null) throw new ArgumentNullException(nameof(modelRoot));
+            if (PreservedDeformAnchor != null) return Bones.Length;
+
+            var anchorObject = new GameObject("PMX Preserved Deform Anchor");
+            PreservedDeformAnchor = anchorObject.transform;
+            PreservedDeformAnchor.SetParent(SkeletonRoot, false);
+            PreservedDeformAnchor.localPosition = Vector3.zero;
+            PreservedDeformAnchor.localRotation = Quaternion.identity;
+            PreservedDeformAnchor.localScale = Vector3.one;
+
+            RendererBones = new Transform[Bones.Length + 1];
+            Array.Copy(Bones, RendererBones, Bones.Length);
+            RendererBones[Bones.Length] = PreservedDeformAnchor;
+            RendererBindposes = new Matrix4x4[Bindposes.Length + 1];
+            Array.Copy(Bindposes, RendererBindposes, Bindposes.Length);
+            RendererBindposes[Bindposes.Length] =
+                PreservedDeformAnchor.worldToLocalMatrix * modelRoot.localToWorldMatrix;
+            return Bones.Length;
+        }
     }
 
     public sealed class SkeletonConverter

@@ -14,7 +14,7 @@ The status vocabulary is part of the compatibility contract:
 | Format | PMX 2.0/2.1 little-endian | Parsed | Other versions and trailing bytes rejected |
 | Format | UTF-16LE and UTF-8 | Parsed | Strict decoding and bounded lengths |
 | Format | 1/2/4-byte indices | Parsed | Vertex unsigned; other categories signed with `-1` |
-| Geometry | Position/normal/base UV/triangles | Converted | PMX-to-Unity handedness and scale applied centrally |
+| Geometry | Position/normal/base UV/triangles | Converted | Handedness, winding, scale, and UV V conversion applied centrally |
 | Geometry | Material surface ranges | Converted | Exact full Surface coverage required |
 | Material | Diffuse/main texture/specular | Approximate | Active-pipeline default shader, no pipeline API reference |
 | Material | Toon/sphere-map/edge semantics | Preserved only | No MMD shader backend |

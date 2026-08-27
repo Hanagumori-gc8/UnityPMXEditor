@@ -208,7 +208,7 @@ namespace Hanagumori.UnityPmx
                 if (vertexIndex < 0 || vertexIndex >= workingUv.Count)
                     throw new InvalidOperationException($"UV morph target {vertexIndex} is out of range.");
                 workingUv[vertexIndex] = workingUv[vertexIndex] +
-                                         new Vector2(offset.UvDelta.x, offset.UvDelta.y) * weight;
+                                         coordinates.ConvertUvDelta(offset.UvDelta) * weight;
             }
         }
 

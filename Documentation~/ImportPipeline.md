@@ -45,7 +45,8 @@ All handedness and unit conversion is owned by `PmxCoordinateConverter`:
 
 - positions apply the configured scale and negate Z;
 - normals negate Z and normalize;
-- UV values are copied without a coordinate-system edit;
+- base UV values preserve U and convert V as `1 - v` for Unity texture sampling;
+- base UV Morph deltas preserve X and negate Y under the same convention;
 - triangle B/C indices are swapped after the handedness change;
 - scalar distances use the same configured scale.
 

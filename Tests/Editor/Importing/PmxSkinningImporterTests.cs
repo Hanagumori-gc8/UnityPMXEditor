@@ -79,8 +79,12 @@ namespace Hanagumori.UnityPmx.Tests
                 document, PmxAdvancedDeformMode.PreserveOnly);
             Assert.That(preserve.AdvancedDeformVertexCount, Is.EqualTo(2));
             Assert.That(preserve.UsedApproximation, Is.False);
-            Assert.That(Sum(preserve.BoneWeights[0]), Is.Zero);
-            Assert.That(Sum(preserve.BoneWeights[1]), Is.Zero);
+            Assert.That(preserve.UsesPreservationAnchor, Is.True);
+            Assert.That(preserve.PreservationAnchorBoneIndex, Is.EqualTo(document.Bones.Count));
+            Assert.That(Sum(preserve.BoneWeights[0]), Is.EqualTo(1f));
+            Assert.That(Sum(preserve.BoneWeights[1]), Is.EqualTo(1f));
+            Assert.That(preserve.BoneWeights[0].boneIndex0, Is.EqualTo(document.Bones.Count));
+            Assert.That(preserve.BoneWeights[1].boneIndex0, Is.EqualTo(document.Bones.Count));
         }
 
         [Test]
@@ -165,6 +169,35 @@ namespace Hanagumori.UnityPmx.Tests
             Assert.That(preserved.AdvancedDeforms[0].DeformType, Is.EqualTo(PmxVertexWeightType.Sdef));
             Assert.That(preserved.AdvancedDeforms[0].RawSdefC, Is.EqualTo(new Vector3(1, 2, 3)));
             Assert.That(preserved.AdvancedDeforms[1].DeformType, Is.EqualTo(PmxVertexWeightType.Qdef));
+            GameObject preservedRoot = AssetDatabase.LoadAssetAtPath<GameObject>(advancedPath);
+            SkinnedMeshRenderer preservedRenderer = preservedRoot.GetComponent<SkinnedMeshRenderer>();
+            Assert.That(preserved.Bones.Length, Is.EqualTo(2));
+            Assert.That(preservedRenderer.bones.Length, Is.EqualTo(3));
+            Assert.That(preservedRenderer.bones[2].name, Is.EqualTo("PMX Preserved Deform Anchor"));
+            Assert.That(preservedRenderer.sharedMesh.bindposes.Length, Is.EqualTo(3));
+            var preservedBake = new Mesh();
+            try
+            {
+                GameObject instance = UnityEngine.Object.Instantiate(preservedRoot);
+                try
+                {
+                    instance.GetComponent<SkinnedMeshRenderer>().BakeMesh(preservedBake);
+                    Vector3[] sourceVertices = preservedRenderer.sharedMesh.vertices;
+                    Vector3[] bakedVertices = preservedBake.vertices;
+                    Assert.That(bakedVertices.Length, Is.EqualTo(sourceVertices.Length));
+                    for (int i = 0; i < sourceVertices.Length; i++)
+                        Assert.That(Vector3.Distance(sourceVertices[i], bakedVertices[i]),
+                            Is.LessThan(0.0001f));
+                }
+                finally
+                {
+                    UnityEngine.Object.DestroyImmediate(instance);
+                }
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(preservedBake);
+            }
 
             var importer = (PmxScriptedImporter)AssetImporter.GetAtPath(advancedPath);
             importer.Settings.AdvancedDeformMode = PmxAdvancedDeformMode.Approximate;
@@ -180,6 +213,8 @@ namespace Hanagumori.UnityPmx.Tests
             Assert.That(approximated.AdvancedDeforms.Length, Is.EqualTo(2));
             Assert.That(approximated.AdvancedDeforms[0].RawSdefR1, Is.EqualTo(new Vector3(7, 8, 9)));
             Assert.That(approximated.Bones.Length, Is.EqualTo(2));
+            GameObject approximatedRoot = AssetDatabase.LoadAssetAtPath<GameObject>(advancedPath);
+            Assert.That(approximatedRoot.GetComponent<SkinnedMeshRenderer>().bones.Length, Is.EqualTo(2));
         }
 
         [UnityTest]

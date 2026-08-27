@@ -101,17 +101,17 @@ README 和 Inspector 使用以下互不混淆的状态：
 - **仅保留（Preserved only）**：数据保存在 `PmxModelAsset`，但没有运行时效果。
 - **未支持（Unsupported）**：没有对应后端，导入诊断会明确报告。
 
-| PMX 功能 | 0.1.0 状态 | 说明 |
+| PMX 功能 | 0.1.1 状态 | 说明 |
 | --- | --- | --- |
 | PMX 2.0/2.1、UTF-16LE/UTF-8、动态索引 | 已解析 | 严格有界读取；仅支持小端 |
-| 顶点、法线、基础 UV、三角形 | 已转换 | 坐标手性、绕序、法线和缩放集中处理 |
+| 顶点、法线、基础 UV、三角形 | 已转换 | 坐标手性、绕序、法线、缩放和 UV V 方向集中处理 |
 | 材质 surface 范围与 submesh | 已转换 | 必须精确覆盖完整 Surface 索引 |
 | BDEF1/BDEF2/BDEF4 | 已转换 | 权重归一化并提供确定性回退 |
 | SDEF/QDEF | 已解析；近似或仅保留 | 没有专用 SDEF/QDEF 变形后端 |
 | 骨骼、层级、bindpose | 已转换 | 只生成 Generic 骨骼，不伪造 Humanoid Avatar |
 | Vertex Morph | 已转换 | 稳定、完整长度的 Unity BlendShapes |
 | Group/Flip/Bone/基础 UV/Material Morph | 近似支持 | 使用确定性运行时控制器，语义差异已记录 |
-| Additional UV 1-4、Impulse Morph | 仅保留 | 0.1.0 没有运行时效果 |
+| Additional UV 1-4、Impulse Morph | 仅保留 | 0.1.1 没有运行时效果 |
 | Display Frame | 仅保留 | 可通过模型元数据和 Inspector 查看 |
 | inherit/grant、deformation layer、IK | 近似支持 | 有界且确定性，但不保证与 MMD 数值一致 |
 | MMD Toon、Sphere Map、描边 | 仅保留 | 默认材质只是明确标注的漫反射/高光近似 |
@@ -235,7 +235,7 @@ stable sub-asset IDs; Japanese display names never determine asset identity.
 - **Scale** controls vertex, bone, Morph-translation, and physics-distance scaling in one
   place.
 - **Advanced Deform Mode** selects `Strict`, `Approximate`, or `PreserveOnly` for
-  SDEF/QDEF. There is no dedicated SDEF/QDEF backend in 0.1.0.
+  SDEF/QDEF. There is no dedicated SDEF/QDEF backend in 0.1.1.
 - **Runtime Capability** defaults to `StandardApproximate`. `MmdCompatible` remains
   subject to documented SDEF/QDEF, IK, grant, material, and physics differences and does
   not claim frame-identical MMD behavior.
@@ -281,17 +281,17 @@ README and Inspector status terms are intentionally distinct:
 - **Preserved only**: source data remains in `PmxModelAsset` without a runtime effect.
 - **Unsupported**: no backend exists and import diagnostics report that explicitly.
 
-| PMX feature | 0.1.0 status | Notes |
+| PMX feature | 0.1.1 status | Notes |
 | --- | --- | --- |
 | PMX 2.0/2.1, UTF-16LE/UTF-8, dynamic indices | Parsed | Strict bounded reader; little-endian only |
-| Vertex, normal, base UV, triangle geometry | Converted | Centralized handedness, winding, normal, and scale conversion |
+| Vertex, normal, base UV, triangle geometry | Converted | Centralized handedness, winding, normal, scale, and UV V conversion |
 | Material surface ranges and submeshes | Converted | Exact complete Surface-index coverage is required |
 | BDEF1/BDEF2/BDEF4 | Converted | Normalized weights with deterministic fallbacks |
 | SDEF/QDEF | Parsed; approximate or preserved only | No dedicated SDEF/QDEF deformation backend |
 | Skeleton, hierarchy, bindposes | Converted | Generic only; no fabricated Humanoid Avatar |
 | Vertex Morph | Converted | Stable full-length Unity BlendShapes |
 | Group/Flip/Bone/base UV/Material Morph | Approximate | Deterministic runtime controllers with documented differences |
-| Additional UV 1-4 and Impulse Morph | Preserved only | No runtime effect in 0.1.0 |
+| Additional UV 1-4 and Impulse Morph | Preserved only | No runtime effect in 0.1.1 |
 | Display frames | Preserved only | Available through model metadata and Inspector |
 | Inherit/grant, deformation layer, and IK | Approximate | Bounded and deterministic, not numerically identical to MMD |
 | MMD toon, sphere map, and edge rendering | Preserved only | Default material is a labeled diffuse/specular approximation |

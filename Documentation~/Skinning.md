@@ -52,12 +52,14 @@ The same weights and bindposes apply when the mesh uses `IndexFormat.UInt32`.
 
 `PmxImportSettings.AdvancedDeformMode` has three explicit modes:
 
-- `Strict`: aborts import when SDEF or QDEF is encountered because 0.1.0 has
+- `Strict`: aborts import when SDEF or QDEF is encountered because 0.1.1 has
   no exact implementation.
 - `Approximate`: applies the stored linear bone indices and weights as BDEF and
   emits an explicit warning that the result is not exact SDEF/QDEF support.
-- `PreserveOnly` (default): serializes the original deform data but assigns no
-  Unity bone weights to those vertices.
+- `PreserveOnly` (default): serializes the original deform data and binds those vertices
+  to a model-space preservation anchor. This keeps the rest mesh intact without
+  pretending to evaluate SDEF/QDEF; the preserved vertices remain static relative to
+  the model while PMX bones animate.
 
 Both Approximate and PreserveOnly save `PmxAdvancedDeformRecord` entries in the
 `PmxModelAsset`, including vertex index, deform type, original bone indices,
@@ -69,8 +71,8 @@ parameters or changes the support label to exact.
 The generated tests cover a parent listed after its child, rest-pose bindpose
 identity, local positions, BDEF1/2/4, -1 indices, zero weights, non-normalized
 weights, deterministic fallback, cycle rejection, a no-bone degenerate model,
-65,536 vertices, stable bone local file IDs, stable metadata references and all
-three advanced-deform modes.
+65,536 vertices, stable bone local file IDs, stable metadata references, a rest-pose
+preservation anchor and all three advanced-deform modes.
 
 The visual test imports a generated skinned fixture, instantiates its root,
 rotates a child bone, calls `SkinnedMeshRenderer.BakeMesh`, renders rest and

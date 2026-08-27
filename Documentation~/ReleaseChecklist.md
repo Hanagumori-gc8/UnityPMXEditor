@@ -1,4 +1,4 @@
-# v0.1.0 Release Checklist
+# v0.1.1 Release Checklist
 
 This checklist records release gates. Update the validation evidence before publishing;
 do not infer runtime correctness from compilation alone.
@@ -11,6 +11,8 @@ do not infer runtime correctness from compilation alone.
 - [x] The authoritative GitHub URL resolves the pushed release-candidate commit.
 - [x] Upgrade from the synthetic 0.0.9 validation predecessor to 0.1.0 completes without
       missing scripts.
+- [x] Local 0.1.1 reimport corrects PMX UV V orientation and removes zero-weight
+      SDEF/QDEF rest-pose displacement on three representative models.
 - [x] Package Manager sample imports, reimports, overrides, and deletes cleanly.
 - [x] No runtime dependency or compile-time API reference to URP, HDRP, or Built-in RP.
 
@@ -37,8 +39,8 @@ do not infer runtime correctness from compilation alone.
 - [x] Release-candidate commit reviewed and intentionally created.
 - [x] Clean working tree after the release-candidate commit.
 - [x] GitHub URL resolves the package from the pushed commit.
-- [ ] Replace the `Unreleased` CHANGELOG marker with the release date when publishing.
-- [ ] `v0.1.0` tag and GitHub Release created only with explicit user authorization.
+- [x] CHANGELOG records the 0.1.1 update and release date.
+- [ ] `v0.1.1` tag and GitHub Release created only with explicit user authorization.
 
 ## Validation evidence
 

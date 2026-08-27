@@ -1,6 +1,6 @@
 {
   "name": "com.hanagumori.unity-pmx-editor",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "displayName": "Unity PMX Editor",
   "description": "Imports PMX model files into the Unity Editor.",
   "unity": "2022.3",

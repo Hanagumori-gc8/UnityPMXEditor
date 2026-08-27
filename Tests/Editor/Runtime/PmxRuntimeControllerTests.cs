@@ -61,7 +61,7 @@ namespace Hanagumori.UnityPmx.Tests
                 Assert.That(morph.GetEffectiveMorphWeight(0), Is.EqualTo(0.875f).Within(0.00001f));
                 Assert.That(renderer.GetBlendShapeWeight(0), Is.EqualTo(87.5f).Within(0.0001f));
                 Assert.That(renderer.sharedMesh.uv[0],
-                    Is.EqualTo(baselineUv + new Vector2(0.05f, 0.1f)));
+                    Is.EqualTo(baselineUv + new Vector2(0.05f, -0.1f)));
                 Color morphedColor = ReadMaterialColor(renderer, 0);
                 Assert.That(morphedColor.r, Is.EqualTo(baselineColor.r + 0.25f).Within(0.0001f));
                 Assert.That(morphedColor.g, Is.EqualTo(baselineColor.g + 0.25f).Within(0.0001f));

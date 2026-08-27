@@ -14,12 +14,15 @@ namespace Hanagumori.UnityPmx
     public sealed class SkinningConversionResult
     {
         internal SkinningConversionResult(BoneWeight[] boneWeights, int advancedDeformVertexCount,
-            int fallbackVertexCount, bool usedApproximation, string warning)
+            int fallbackVertexCount, bool usedApproximation, bool usesPreservationAnchor,
+            int preservationAnchorBoneIndex, string warning)
         {
             BoneWeights = boneWeights;
             AdvancedDeformVertexCount = advancedDeformVertexCount;
             FallbackVertexCount = fallbackVertexCount;
             UsedApproximation = usedApproximation;
+            UsesPreservationAnchor = usesPreservationAnchor;
+            PreservationAnchorBoneIndex = preservationAnchorBoneIndex;
             Warning = warning;
         }
 
@@ -27,6 +30,8 @@ namespace Hanagumori.UnityPmx
         public int AdvancedDeformVertexCount { get; }
         public int FallbackVertexCount { get; }
         public bool UsedApproximation { get; }
+        public bool UsesPreservationAnchor { get; }
+        public int PreservationAnchorBoneIndex { get; }
         public string Warning { get; }
     }
 
@@ -56,7 +61,11 @@ namespace Hanagumori.UnityPmx
                             $"Vertex {i} uses {deform.Type}, which is not exactly supported in Stage 3 Strict mode.");
                     if (mode == PmxAdvancedDeformMode.PreserveOnly)
                     {
-                        weights[i] = default;
+                        weights[i] = new BoneWeight
+                        {
+                            boneIndex0 = document.Bones.Count,
+                            weight0 = 1f
+                        };
                         continue;
                     }
                 }
@@ -71,7 +80,9 @@ namespace Hanagumori.UnityPmx
                 ? $"Approximated {advancedCount} SDEF/QDEF vertices as linear BDEF weights. " +
                   "This is not exact SDEF or QDEF support."
                 : null;
-            return new SkinningConversionResult(weights, advancedCount, fallbackCount, approximated, warning);
+            bool preserved = advancedCount > 0 && mode == PmxAdvancedDeformMode.PreserveOnly;
+            return new SkinningConversionResult(weights, advancedCount, fallbackCount,
+                approximated, preserved, preserved ? document.Bones.Count : -1, warning);
         }
 
         public void ApplyToMesh(Mesh mesh, SkinningConversionResult skinning,
@@ -86,7 +97,18 @@ namespace Hanagumori.UnityPmx
             if (skeleton.Bindposes.Length != skeleton.Bones.Length)
                 throw new InvalidOperationException("Skeleton bindpose and bone counts do not match.");
 
-            mesh.bindposes = skeleton.Bindposes;
+            if (skinning.UsesPreservationAnchor)
+            {
+                if (skinning.PreservationAnchorBoneIndex != skeleton.Bones.Length)
+                    throw new InvalidOperationException(
+                        $"PMX preservation anchor index {skinning.PreservationAnchorBoneIndex} " +
+                        $"does not match skeleton bone count {skeleton.Bones.Length}.");
+                int anchorIndex = skeleton.EnsurePreservedDeformAnchor(skeleton.SkeletonRoot.parent);
+                if (anchorIndex != skinning.PreservationAnchorBoneIndex)
+                    throw new InvalidOperationException("Unexpected PMX preserved deform anchor index.");
+            }
+
+            mesh.bindposes = skeleton.RendererBindposes;
             mesh.boneWeights = skinning.BoneWeights;
         }
 

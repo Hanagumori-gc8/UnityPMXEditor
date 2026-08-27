@@ -20,7 +20,7 @@ Git installation requires a committed revision whose repository root contains
 `package.json`. Pin releases or immutable commits:
 
 ```text
-https://github.com/Hanagumori-gc8/UnityPMXEditor.git#v0.1.0
+https://github.com/Hanagumori-gc8/UnityPMXEditor.git#<release-tag>
 https://github.com/Hanagumori-gc8/UnityPMXEditor.git#<full-commit-sha>
 ```
 

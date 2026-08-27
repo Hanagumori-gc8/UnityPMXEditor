@@ -41,7 +41,9 @@ namespace Hanagumori.UnityPmx.Tests
 
             Assert.That(position, Is.EqualTo(new Vector3(0.1f, 0.2f, -0.3f)));
             Assert.That(normal, Is.EqualTo(new Vector3(0, 0, -1)));
-            Assert.That(uv, Is.EqualTo(new Vector2(0.25f, 0.75f)));
+            Assert.That(uv, Is.EqualTo(new Vector2(0.25f, 0.25f)));
+            Assert.That(converter.ConvertUvDelta(new Vector4(0.1f, 0.2f, 0.3f, 0.4f)),
+                Is.EqualTo(new Vector2(0.1f, -0.2f)));
             CollectionAssert.AreEqual(new[] { 1, 3, 2 }, triangle);
             Assert.That(converter.ConvertScale(2f), Is.EqualTo(0.2f));
         }
@@ -96,6 +98,9 @@ namespace Hanagumori.UnityPmx.Tests
             CollectionAssert.AreEqual(new[] { 1, 2, 3 }, mesh.GetTriangles(1));
             Assert.That(mesh.vertices[1], Is.EqualTo(new Vector3(0.1f, 0, 0)));
             Assert.That(mesh.normals[0], Is.EqualTo(new Vector3(0, 0, -1)));
+            Assert.That(mesh.uv[0], Is.EqualTo(new Vector2(0, 1)));
+            Assert.That(mesh.uv[1], Is.EqualTo(new Vector2(1, 1)));
+            Assert.That(mesh.uv[2], Is.EqualTo(new Vector2(0, 0)));
 
             int[] firstTriangle = mesh.GetTriangles(0);
             Vector3 geometricNormal = Vector3.Cross(

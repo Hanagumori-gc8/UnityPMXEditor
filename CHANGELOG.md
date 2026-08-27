@@ -2,7 +2,23 @@
 
 All notable changes to this package are documented in this file.
 
-## [0.1.0] - Unreleased
+## [0.1.1] - 2026-08-28
+
+### Fixed
+
+- Convert PMX texture V coordinates and base UV Morph Y deltas to Unity's sampling
+  convention.
+- Preserve SDEF/QDEF-only vertices at their rest positions with a model-space anchor in
+  `PreserveOnly` mode instead of emitting zero-sum Unity bone weights.
+
+### Changed
+
+- Increment the PMX scripted importer version so existing assets are reimported with the
+  corrected UV and skinning conversion.
+- Document that `PreserveOnly` retains SDEF/QDEF source data and rest geometry but does
+  not apply SDEF/QDEF deformation at runtime.
+
+## [0.1.0] - 2026-08-28
 
 ### Added
 

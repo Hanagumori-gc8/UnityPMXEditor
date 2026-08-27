@@ -48,7 +48,7 @@ UnityPMXEditor/
 The Runtime and Editor asmdefs stay at their assembly roots so all responsibility
 subfolders remain in the same assemblies. Test asmdefs follow the same rule.
 
-## Current 0.1.0 scope
+## Current 0.1.1 scope
 
 The current package implements bounded PMX 2.0/2.1 parsing, import validation, Mesh and
 approximate Material conversion, Generic skeleton and skinning, versioned metadata,

@@ -41,7 +41,9 @@ namespace Hanagumori.UnityPmx
                 rotation.z * inverse, rotation.w * inverse);
         }
 
-        public Vector2 ConvertUv(PmxVector2 value) => new Vector2(value.X, value.Y);
+        public Vector2 ConvertUv(PmxVector2 value) => new Vector2(value.X, 1f - value.Y);
+
+        public Vector2 ConvertUvDelta(Vector4 value) => new Vector2(value.x, -value.y);
 
         public float ConvertScale(float value) => value * Scale;
 

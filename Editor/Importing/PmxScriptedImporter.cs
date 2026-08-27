@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace Hanagumori.UnityPmx
 {
-    [ScriptedImporter(2, "pmx")]
+    [ScriptedImporter(3, "pmx")]
     public sealed class PmxScriptedImporter : ScriptedImporter
     {
         private const string RootAssetId = "main/root";
@@ -61,7 +61,7 @@ namespace Hanagumori.UnityPmx
                 var renderer = root.AddComponent<SkinnedMeshRenderer>();
                 renderer.sharedMesh = mesh;
                 renderer.sharedMaterials = materials;
-                renderer.bones = skeleton.Bones;
+                renderer.bones = skeleton.RendererBones;
                 renderer.rootBone = skeleton.RootBone;
                 renderer.localBounds = mesh.bounds;
 
@@ -235,7 +235,8 @@ namespace Hanagumori.UnityPmx
                      mode == PmxAdvancedDeformMode.PreserveOnly)
             {
                 warning = $"Preserved {skinning.AdvancedDeformVertexCount} SDEF/QDEF vertices without " +
-                          "approximating them. They have no Unity bone weights in PreserveOnly mode.";
+                          "approximating them. They are fixed to a model-space preservation anchor " +
+                          "and do not receive SDEF/QDEF deformation in PreserveOnly mode.";
                 diagnostics.Add(new PmxImportDiagnostic(PmxDiagnosticSeverity.Warning,
                     PmxFeatureSupportStatus.Preserved, "SKINNING_PRESERVED", warning, "Vertex"));
             }
