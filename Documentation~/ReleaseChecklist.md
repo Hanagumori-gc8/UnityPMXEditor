@@ -52,7 +52,7 @@ do not infer runtime correctness from compilation alone.
 - Final Unity suites passed 27/27 EditMode tests and 23/23 PlayMode tests. The experimental
   physics fixture completed 3000 fixed frames, 60 simulated seconds at a 0.02-second
   timestep.
-- GitHub `main` was pushed to release-candidate commit `3afe3b75`. A clean Unity
-  2022.3.60f1 URP 14.0.12 project resolved the authoritative HTTPS Git URL with
-  `source=Git`, imported and reimported the Sample with stable local IDs, and deleted it.
-  The earlier connection reset was transient and the successful retry supersedes it.
+- A clean Unity 2022.3.60f1 URP 14.0.12 project resolved the current GitHub `main`
+  through the authoritative HTTPS Git URL with `source=Git`, imported and reimported the
+  Sample with stable local IDs, and deleted it. The earlier connection reset was
+  transient and the successful retry supersedes it.
