@@ -79,7 +79,7 @@ their expected model sizes.
 
 ## Fixture provenance
 
-`Tests/Runtime/PmxFixtureBuilder.cs` writes its PMX bytes directly with
+`Tests/Runtime/Format/PmxFixtureBuilder.cs` writes its PMX bytes directly with
 `BinaryWriter` from the field order above. It does not embed, transform or
 redistribute an MMD model. Tests generate both encodings, all index widths,
 all supported deforms and morphs, and the PMX 2.1 SoftBody payload. Corrupt
