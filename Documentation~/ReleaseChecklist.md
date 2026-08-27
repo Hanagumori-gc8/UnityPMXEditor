@@ -8,7 +8,7 @@ do not infer runtime correctness from compilation alone.
 - [x] Repository root is a valid `com.hanagumori.unity-pmx-editor` UPM package.
 - [x] Unity 2022.3.60f1 resolves a local file dependency in a clean URP 14.0.12 project.
 - [x] Unity resolves a temporary Git URL pinned to an exact final-candidate snapshot.
-- [ ] The authoritative GitHub URL resolves the intended release commit.
+- [x] The authoritative GitHub URL resolves the pushed release-candidate commit.
 - [x] Upgrade from the synthetic 0.0.9 validation predecessor to 0.1.0 completes without
       missing scripts.
 - [x] Package Manager sample imports, reimports, overrides, and deletes cleanly.
@@ -34,9 +34,10 @@ do not infer runtime correctness from compilation alone.
 
 ## Publishing
 
-- [ ] Release commit reviewed and intentionally created.
-- [ ] Clean working tree at the release commit.
-- [ ] GitHub URL resolves the package from that commit.
+- [x] Release-candidate commit reviewed and intentionally created.
+- [x] Clean working tree after the release-candidate commit.
+- [x] GitHub URL resolves the package from the pushed commit.
+- [ ] Replace the `Unreleased` CHANGELOG marker with the release date when publishing.
 - [ ] `v0.1.0` tag and GitHub Release created only with explicit user authorization.
 
 ## Validation evidence
@@ -51,7 +52,7 @@ do not infer runtime correctness from compilation alone.
 - Final Unity suites passed 27/27 EditMode tests and 23/23 PlayMode tests. The experimental
   physics fixture completed 3000 fixed frames, 60 simulated seconds at a 0.02-second
   timestep.
-- The current GitHub `main` remains at the initial commit without `package.json`. Unity's
-  direct GitHub resolution attempt also encountered a connection reset. Public Git URL
-  installation therefore remains blocked until an authorized release commit is pushed
-  and verified from a clean project.
+- GitHub `main` was pushed to release-candidate commit `3afe3b75`. A clean Unity
+  2022.3.60f1 URP 14.0.12 project resolved the authoritative HTTPS Git URL with
+  `source=Git`, imported and reimported the Sample with stable local IDs, and deleted it.
+  The earlier connection reset was transient and the successful retry supersedes it.
