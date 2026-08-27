@@ -36,6 +36,7 @@ namespace Hanagumori.UnityPmx
         public PmxRuntimeCapabilityPath RequestedCapability => requestedCapability;
         public PmxRuntimeCapabilityPath ActiveCapability => compatibilityReport?.ActivePath ?? requestedCapability;
         public PmxCompatibilityReport CompatibilityReport => compatibilityReport;
+        public PmxModelAsset ModelAsset => modelAsset;
         public int EvaluatedFrameCount => evaluatedFrameCount;
         public PmxMorphController MorphController => morphController;
         public PmxBoneController BoneController => boneController;

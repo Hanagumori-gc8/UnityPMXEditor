@@ -8,6 +8,8 @@ namespace Hanagumori.UnityPmx
     [CustomEditor(typeof(PmxModelAsset))]
     public sealed class PmxModelAssetInspector : UnityEditor.Editor
     {
+        private bool showParts = true;
+        private bool showBones;
         private bool showMorphs = true;
         private bool showDiagnostics = true;
 
@@ -41,6 +43,15 @@ namespace Hanagumori.UnityPmx
             EditorGUILayout.LabelField("Soft Bodies", asset.SoftBodyMetadata.Length.ToString());
             EditorGUILayout.LabelField("Physics Import", asset.PhysicsImportMode.ToString());
 
+            EditorGUILayout.Space();
+            DrawExportButtons(asset);
+
+            showParts = EditorGUILayout.Foldout(showParts, "Model Parts (Material Submeshes)", true);
+            if (showParts) PmxInspectorGui.DrawParts(asset);
+
+            showBones = EditorGUILayout.Foldout(showBones, "Bones", true);
+            if (showBones) PmxInspectorGui.DrawBones(asset, null);
+
             showMorphs = EditorGUILayout.Foldout(showMorphs, "Morph Support", true);
             if (showMorphs)
             {
@@ -70,6 +81,21 @@ namespace Hanagumori.UnityPmx
                         $"[{diagnostic.Status}] {diagnostic.Code}: {diagnostic.Message}", type);
                 }
                 EditorGUI.indentLevel--;
+            }
+        }
+
+        private static void DrawExportButtons(PmxModelAsset asset)
+        {
+            string assetPath = AssetDatabase.GetAssetPath(asset);
+            var root = AssetDatabase.LoadMainAssetAtPath(assetPath) as GameObject;
+            using (new EditorGUI.DisabledScope(root == null))
+            {
+                EditorGUILayout.BeginHorizontal();
+                if (GUILayout.Button("Export FBX..."))
+                    PmxModelExportMenu.ExportWithDialog(root, PmxModelExportFormat.Fbx);
+                if (GUILayout.Button("Export OBJ..."))
+                    PmxModelExportMenu.ExportWithDialog(root, PmxModelExportFormat.Obj);
+                EditorGUILayout.EndHorizontal();
             }
         }
 

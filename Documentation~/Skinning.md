@@ -52,7 +52,7 @@ The same weights and bindposes apply when the mesh uses `IndexFormat.UInt32`.
 
 `PmxImportSettings.AdvancedDeformMode` has three explicit modes:
 
-- `Strict`: aborts import when SDEF or QDEF is encountered because 0.1.1 has
+- `Strict`: aborts import when SDEF or QDEF is encountered because 0.2.0 has
   no exact implementation.
 - `Approximate`: applies the stored linear bone indices and weights as BDEF and
   emits an explicit warning that the result is not exact SDEF/QDEF support.

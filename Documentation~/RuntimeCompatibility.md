@@ -67,7 +67,7 @@ linear Material, UV, grant and IK approximations.
 capability checks. It is still reported as Approximated while the differences
 above remain.
 
-There is no dedicated SDEF/QDEF backend in 0.1.1. If a model contains either
+There is no dedicated SDEF/QDEF backend in 0.2.0. If a model contains either
 deform and requests MmdCompatible, the configured policy must:
 
 - `Reject`, producing a compatibility error; or

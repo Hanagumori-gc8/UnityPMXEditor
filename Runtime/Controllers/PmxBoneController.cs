@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Hanagumori.UnityPmx
@@ -15,6 +16,7 @@ namespace Hanagumori.UnityPmx
         [NonSerialized] private Quaternion[] baselineRotations;
         [NonSerialized] private int[] deformationOrder;
 
+        public IReadOnlyList<Transform> Bones => bones;
         public int LastAppliedFrame { get; private set; } = -1;
 
         internal void Configure(PmxModelAsset asset, Transform[] importedBones)

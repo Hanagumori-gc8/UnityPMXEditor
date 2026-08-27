@@ -3,7 +3,8 @@
   "rootNamespace": "Hanagumori.UnityPmx",
   "references": [
     "Hanagumori.UnityPmx.Format",
-    "Hanagumori.UnityPmx.Runtime"
+    "Hanagumori.UnityPmx.Runtime",
+    "Unity.Formats.Fbx.Editor"
   ],
   "includePlatforms": [
     "Editor"

@@ -1,8 +1,8 @@
 {
   "name": "com.hanagumori.unity-pmx-editor",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "displayName": "Unity PMX Editor",
-  "description": "Imports PMX model files into the Unity Editor.",
+  "description": "Imports PMX models, exposes parts and bone Gizmos, and exports FBX or OBJ in the Unity Editor.",
   "unity": "2022.3",
   "license": "MIT",
   "author": {
@@ -13,8 +13,14 @@
     "pmx",
     "mmd",
     "model",
-    "importer"
+    "importer",
+    "fbx",
+    "obj",
+    "exporter"
   ],
+  "dependencies": {
+    "com.unity.formats.fbx": "4.2.1"
+  },
   "samples": [
     {
       "displayName": "Minimal PMX Fixture",

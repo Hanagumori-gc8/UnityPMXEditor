@@ -10,7 +10,7 @@ UnityPMXEditor 是一个开源 Unity Package Manager（UPM）插件，用于读�
 
 ### 安装方法
 
-#### 本地开发安装
+#### 从磁盘安装
 
 克隆或准备独立的 UnityPMXEditor 仓库后，在 Unity 中打开 **Window > Package
 Manager**，选择 **Add package from disk**，然后选择仓库根目录的 `package.json`。
@@ -37,9 +37,8 @@ Package Manager 中选择 **Add package from git URL**，并使用固定的 tag 
 https://github.com/Hanagumori-gc8/UnityPMXEditor.git#<tag-or-commit>
 ```
 
-未固定版本的 URL 会跟随默认分支，不具备可复现性。在 release commit 或 tag
-真正推送到远端之前，不应假定对应 Git URL 已经可安装。完整升级和删除流程见
-[安装与升级说明](Documentation~/Installation.md)。
+未固定版本的 URL 会跟随默认分支，不具备可复现性。发布环境建议固定 release tag
+或完整 commit SHA。完整升级和删除流程见[安装与升级说明](Documentation~/Installation.md)。
 
 ### 操作指南
 
@@ -56,6 +55,32 @@ https://github.com/Hanagumori-gc8/UnityPMXEditor.git#<tag-or-commit>
 导入器会创建根 `GameObject`、Mesh、Material sub-assets、版本化 `PmxModelAsset`、
 Generic 骨骼、蒙皮、BlendShapes、Morph/骨骼运行时控制器，以及可选的实验性 PhysX
 组件。sub-asset ID 使用结构化索引，不依赖可能重复或变化的日文名称。
+
+#### 查看模型部件和骨骼
+
+展开 `.pmx` 资产并选择 `PmxModelAsset`，或选择场景实例上的
+`PmxRuntimeController`。Inspector 的 **Model Parts (Material Submeshes)** 会按稳定材质
+索引列出部件名称、三角形数量和 Unity Material；**Bones** 会显示骨骼原始名称、父级
+索引和 deformation layer。场景实例中可用 **Select** 定位骨骼 Transform。选中 PMX
+根对象时，Scene 视图会绘制骨骼连线和关节点 Gizmo。
+
+导入器仍使用一个 `SkinnedMeshRenderer`，不会为了显示部件而拆分并复制蒙皮和
+BlendShape 状态。需要独立选择静态部件时，可导出 OBJ；每个材质 submesh 会成为
+稳定的 OBJ `g` 分组。
+
+#### 导出 FBX 或 OBJ
+
+选择导入的 PMX 主资产、`PmxModelAsset` sub-asset 或场景中的 PMX 实例，然后使用
+Inspector 的 **Export FBX...** / **Export OBJ...**，也可以使用：
+
+- **Assets > UnityPMXEditor > Export Selected as FBX...**
+- **Assets > UnityPMXEditor > Export Selected as OBJ...**
+
+FBX 通过 Unity 2022.3 对应的官方 `com.unity.formats.fbx` 4.2.1 导出，保留 Generic
+骨骼层级、蒙皮、材质以及官方 Exporter 能表达的数据。OBJ 会烘焙当前静态姿态，并
+导出顶点、法线、UV、材质分组和 `.mtl`；OBJ 不包含骨骼、蒙皮、BlendShape、动画、
+物理或 PMX 元数据。两种格式都不能把近似或仅保留的 MMD 语义变成精确支持。详见
+[部件、骨骼与导出说明](Documentation~/Exporting.md)。
 
 #### 主要导入设置
 
@@ -85,6 +110,7 @@ Generic 骨骼、蒙皮、BlendShapes、Morph/骨骼运行时控制器，以及�
 - 已验证 Editor：Unity 2022.3.60f1
 - 已验证渲染管线：URP 14.0.12
 - 核心包不依赖 URP，也不引用 URP API
+- FBX 导出依赖 Unity 官方 `com.unity.formats.fbx` 4.2.1，仅由 Editor 程序集引用
 - Built-in Render Pipeline：未验证
 - HDRP：未验证
 
@@ -101,7 +127,7 @@ README 和 Inspector 使用以下互不混淆的状态：
 - **仅保留（Preserved only）**：数据保存在 `PmxModelAsset`，但没有运行时效果。
 - **未支持（Unsupported）**：没有对应后端，导入诊断会明确报告。
 
-| PMX 功能 | 0.1.1 状态 | 说明 |
+| PMX 功能 | 0.2.0 状态 | 说明 |
 | --- | --- | --- |
 | PMX 2.0/2.1、UTF-16LE/UTF-8、动态索引 | 已解析 | 严格有界读取；仅支持小端 |
 | 顶点、法线、基础 UV、三角形 | 已转换 | 坐标手性、绕序、法线、缩放和 UV V 方向集中处理 |
@@ -111,8 +137,11 @@ README 和 Inspector 使用以下互不混淆的状态：
 | 骨骼、层级、bindpose | 已转换 | 只生成 Generic 骨骼，不伪造 Humanoid Avatar |
 | Vertex Morph | 已转换 | 稳定、完整长度的 Unity BlendShapes |
 | Group/Flip/Bone/基础 UV/Material Morph | 近似支持 | 使用确定性运行时控制器，语义差异已记录 |
-| Additional UV 1-4、Impulse Morph | 仅保留 | 0.1.1 没有运行时效果 |
+| Additional UV 1-4、Impulse Morph | 仅保留 | 0.2.0 没有运行时效果 |
 | Display Frame | 仅保留 | 可通过模型元数据和 Inspector 查看 |
+| 材质部件与骨骼 Gizmo | 已转换 | Inspector 部件/骨骼列表；Scene 视图显示骨骼 Gizmo |
+| FBX 导出 | 已转换 | 使用 Unity 官方 FBX Exporter；保留 Generic 骨骼和蒙皮 |
+| OBJ/MTL 导出 | 已转换 | 当前静态姿态及材质分组；不包含骨骼、Morph 或动画 |
 | inherit/grant、deformation layer、IK | 近似支持 | 有界且确定性，但不保证与 MMD 数值一致 |
 | MMD Toon、Sphere Map、描边 | 仅保留 | 默认材质只是明确标注的漫反射/高光近似 |
 | Sphere/Box/Capsule 刚体 | 近似支持，可选 | 实验性 Bullet 到 PhysX 映射；默认关闭 |
@@ -133,8 +162,8 @@ PMX binary -> PmxDocument -> validation/normalization
   `noEngineReferences: true`，不引用 Unity API。
 - `Hanagumori.UnityPmx.Runtime` 只引用 Format 和 Unity runtime API，不引用
   `UnityEditor`。
-- `Hanagumori.UnityPmx.Editor` 仅在 Editor 平台编译，负责 `AssetDatabase` 和
-  `ScriptedImporter`。
+- `Hanagumori.UnityPmx.Editor` 仅在 Editor 平台编译，负责 `AssetDatabase`、
+  `ScriptedImporter`、Inspector/Gizmo 和 FBX/OBJ 导出。
 - 渲染管线差异通过 `IMaterialConverter` 隔离，核心包没有 URP 硬依赖。
 
 ### 重要限制
@@ -152,11 +181,10 @@ PMX binary -> PmxDocument -> validation/normalization
 [运行时兼容性](Documentation~/RuntimeCompatibility.md)和
 [物理兼容性](Documentation~/PhysicsCompatibility.md)。
 
-### 开发与测试
+### 测试与贡献
 
 在测试工程的 `testables` 中加入包名后，可通过 Unity Test Framework 运行 EditMode
 和 PlayMode 测试。测试 PMX 由代码生成或由项目自行制作，不提交第三方 MMD 模型。
-当前发布审计范围见[发布检查清单](Documentation~/ReleaseChecklist.md)。
 
 ### 许可证
 
@@ -178,7 +206,7 @@ name `com.hanagumori.unity-pmx-editor`, and exposes the C# namespace
 
 ### Installation
 
-#### Local development installation
+#### Install from disk
 
 Keep UnityPMXEditor in an independent repository. In Unity, open **Window > Package
 Manager**, choose **Add package from disk**, and select the repository-root
@@ -207,10 +235,9 @@ After the target GitHub commit or tag contains the repository-root `package.json
 https://github.com/Hanagumori-gc8/UnityPMXEditor.git#<tag-or-commit>
 ```
 
-An unpinned URL follows the default branch and is not reproducible. Do not assume that a
-Git URL works before its release commit or tag has actually been pushed. See
-[Installation and Upgrade](Documentation~/Installation.md) for upgrade and removal
-details.
+An unpinned URL follows the default branch and is not reproducible. Pin a release tag or
+full commit SHA for production. See
+[Installation and Upgrade](Documentation~/Installation.md) for upgrade and removal details.
 
 ### Usage Guide
 
@@ -230,12 +257,42 @@ The importer creates a root `GameObject`, Mesh, Material sub-assets, a versioned
 controllers, and optional experimental PhysX components. Structural indices provide
 stable sub-asset IDs; Japanese display names never determine asset identity.
 
+#### Inspecting model parts and bones
+
+Expand the `.pmx` asset and select `PmxModelAsset`, or select the
+`PmxRuntimeController` on a scene instance. **Model Parts (Material Submeshes)** lists
+each stable material index, part name, triangle count, and Unity Material. **Bones** lists
+the original bone name, parent index, and deformation layer. On a scene instance,
+**Select** focuses the corresponding bone Transform. Selecting the PMX root draws bone
+links and joint Gizmos in the Scene view.
+
+The importer deliberately retains one `SkinnedMeshRenderer`; it does not split and
+duplicate skinning and BlendShape state merely to expose parts. OBJ export emits one
+stable `g` group per material submesh when individually selectable static parts are
+needed.
+
+#### Exporting FBX or OBJ
+
+Select the imported PMX main asset, its `PmxModelAsset` sub-asset, or a PMX scene
+instance. Use **Export FBX...** / **Export OBJ...** in the Inspector, or:
+
+- **Assets > UnityPMXEditor > Export Selected as FBX...**
+- **Assets > UnityPMXEditor > Export Selected as OBJ...**
+
+FBX uses Unity's official `com.unity.formats.fbx` 4.2.1 package for Unity 2022.3 and
+preserves the Generic bone hierarchy, skinning, materials, and data supported by the
+official exporter. OBJ bakes the current static pose and writes vertices, normals, UVs,
+material groups, and an `.mtl`; it contains no bones, skinning, BlendShapes, animation,
+physics, or PMX metadata. Neither format turns approximate or preserved-only MMD
+semantics into exact support. See
+[Model Parts, Bone Gizmos, and Export](Documentation~/Exporting.md).
+
 #### Main import settings
 
 - **Scale** controls vertex, bone, Morph-translation, and physics-distance scaling in one
   place.
 - **Advanced Deform Mode** selects `Strict`, `Approximate`, or `PreserveOnly` for
-  SDEF/QDEF. There is no dedicated SDEF/QDEF backend in 0.1.1.
+  SDEF/QDEF. There is no dedicated SDEF/QDEF backend in 0.2.0.
 - **Runtime Capability** defaults to `StandardApproximate`. `MmdCompatible` remains
   subject to documented SDEF/QDEF, IK, grant, material, and physics differences and does
   not claim frame-identical MMD behavior.
@@ -262,6 +319,7 @@ import, and reimport behavior.
 - Validated Editor: Unity 2022.3.60f1
 - Validated render pipeline: URP 14.0.12
 - The core package has no URP dependency or URP API reference
+- FBX export depends on Unity's official `com.unity.formats.fbx` 4.2.1 package in Editor only
 - Built-in Render Pipeline: not validated
 - HDRP: not validated
 
@@ -281,7 +339,7 @@ README and Inspector status terms are intentionally distinct:
 - **Preserved only**: source data remains in `PmxModelAsset` without a runtime effect.
 - **Unsupported**: no backend exists and import diagnostics report that explicitly.
 
-| PMX feature | 0.1.1 status | Notes |
+| PMX feature | 0.2.0 status | Notes |
 | --- | --- | --- |
 | PMX 2.0/2.1, UTF-16LE/UTF-8, dynamic indices | Parsed | Strict bounded reader; little-endian only |
 | Vertex, normal, base UV, triangle geometry | Converted | Centralized handedness, winding, normal, scale, and UV V conversion |
@@ -291,8 +349,11 @@ README and Inspector status terms are intentionally distinct:
 | Skeleton, hierarchy, bindposes | Converted | Generic only; no fabricated Humanoid Avatar |
 | Vertex Morph | Converted | Stable full-length Unity BlendShapes |
 | Group/Flip/Bone/base UV/Material Morph | Approximate | Deterministic runtime controllers with documented differences |
-| Additional UV 1-4 and Impulse Morph | Preserved only | No runtime effect in 0.1.1 |
+| Additional UV 1-4 and Impulse Morph | Preserved only | No runtime effect in 0.2.0 |
 | Display frames | Preserved only | Available through model metadata and Inspector |
+| Material parts and bone Gizmos | Converted | Inspector part/bone lists and Scene-view bone Gizmos |
+| FBX export | Converted | Official Unity FBX Exporter; Generic hierarchy and skinning |
+| OBJ/MTL export | Converted | Current static pose and material groups; no bones, Morphs, or animation |
 | Inherit/grant, deformation layer, and IK | Approximate | Bounded and deterministic, not numerically identical to MMD |
 | MMD toon, sphere map, and edge rendering | Preserved only | Default material is a labeled diffuse/specular approximation |
 | Sphere/Box/Capsule rigid bodies | Approximate, opt-in | Experimental Bullet-to-PhysX mapping; disabled by default |
@@ -313,8 +374,8 @@ PMX binary -> PmxDocument -> validation/normalization
   API reference.
 - `Hanagumori.UnityPmx.Runtime` references Format and Unity runtime APIs, never
   `UnityEditor`.
-- `Hanagumori.UnityPmx.Editor` compiles only for Editor and owns `AssetDatabase` and
-  `ScriptedImporter` usage.
+- `Hanagumori.UnityPmx.Editor` compiles only for Editor and owns `AssetDatabase`,
+  `ScriptedImporter`, Inspector/Gizmo, and FBX/OBJ export usage.
 - `IMaterialConverter` isolates render-pipeline policy; the core package has no hard URP
   dependency.
 
@@ -337,12 +398,11 @@ See [PMX Format](Documentation~/PmxFormat.md),
 [Runtime Compatibility](Documentation~/RuntimeCompatibility.md), and
 [Physics Compatibility](Documentation~/PhysicsCompatibility.md).
 
-### Development and Tests
+### Tests and Contributing
 
 Add the package name to the consuming project's `testables` list, then run EditMode and
 PlayMode suites through Unity Test Framework. Test PMX files are generated from code or
-self-authored; no third-party MMD model is committed. See the current
-[Release Checklist](Documentation~/ReleaseChecklist.md).
+self-authored; no third-party MMD model is committed.
 
 ### License
 

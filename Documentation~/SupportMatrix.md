@@ -28,6 +28,10 @@ The status vocabulary is part of the compatibility contract:
 | Bone runtime | Inherit/grant/deformation layer | Approximate | Model-local deterministic order |
 | Bone runtime | IK | Approximate | Bounded CCD, not MMD numerical equivalence |
 | Display | Display frames | Preserved only | Inspector/model metadata only |
+| Editor tools | Material submesh parts | Converted | Listed in Inspector and emitted as stable OBJ groups |
+| Editor tools | Bone visualization | Converted | Selected scene instances show bone lines and joints as Gizmos |
+| Export | FBX | Converted | Official Unity FBX Exporter; Generic skeleton/skinning, not MMD runtime equivalence |
+| Export | OBJ/MTL | Converted | Current static pose only; no bones, skinning, Morphs, animation, physics, or PMX metadata |
 | Physics | Physics=None | Converted | No physics components; mesh/skeleton remain usable |
 | Physics | Sphere/Box/Capsule and modes 0/1/2 | Approximate | Experimental PhysX path |
 | Physics | Spring 6DOF type 0 | Approximate | `ConfigurableJoint` limit/drive differences |
