@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace Hanagumori.UnityPmx
 {
-    [ScriptedImporter(3, "pmx")]
+    [ScriptedImporter(5, "pmx")]
     public sealed class PmxScriptedImporter : ScriptedImporter
     {
         private const string RootAssetId = "main/root";
@@ -58,12 +58,8 @@ namespace Hanagumori.UnityPmx
                     diagnostics, settings, skinning);
                 string physicsWarning = AppendPhysicsDiagnostics(diagnostics, document, settings);
 
-                var renderer = root.AddComponent<SkinnedMeshRenderer>();
-                renderer.sharedMesh = mesh;
-                renderer.sharedMaterials = materials;
-                renderer.bones = skeleton.RendererBones;
-                renderer.rootBone = skeleton.RootBone;
-                renderer.localBounds = mesh.bounds;
+                PartHierarchyResult partHierarchy = CreatePartHierarchy(context, root,
+                    document, mesh, materials, skeleton, settings.PartHierarchyMode);
 
                 var metadata = ScriptableObject.CreateInstance<PmxModelAsset>();
                 ownedObjects.Add(metadata);
@@ -73,7 +69,7 @@ namespace Hanagumori.UnityPmx
                     settings.PhysicsMode, diagnostics.ToArray());
 
                 var morphController = root.AddComponent<PmxMorphController>();
-                morphController.Configure(metadata, renderer, settings.Scale);
+                morphController.Configure(metadata, partHierarchy.Renderers, settings.Scale);
                 var boneController = root.AddComponent<PmxBoneController>();
                 boneController.Configure(metadata, skeleton.Bones);
                 var runtimeController = root.AddComponent<PmxRuntimeController>();
@@ -183,6 +179,107 @@ namespace Hanagumori.UnityPmx
 
         private static Texture2D ResolveTexture(Texture2D[] textures, int index)
             => index >= 0 && index < textures.Length ? textures[index] : null;
+
+        private static PartHierarchyResult CreatePartHierarchy(AssetImportContext context,
+            GameObject root,
+            PmxDocument document, Mesh mesh, Material[] materials,
+            SkeletonConversionResult skeleton, PmxPartHierarchyMode mode)
+        {
+            var controller = root.AddComponent<PmxModelPartsController>();
+            var partsRoot = new GameObject("PMX Model Parts");
+            partsRoot.transform.SetParent(root.transform, false);
+
+            if (mode == PmxPartHierarchyMode.ProxyNodes)
+            {
+                var meshObject = new GameObject("PMX Mesh");
+                meshObject.transform.SetParent(root.transform, false);
+                SkinnedMeshRenderer renderer = CreateRenderer(meshObject, mesh, materials,
+                    skeleton, 0);
+                var parts = new PmxModelPart[materials.Length];
+                for (int i = 0; i < parts.Length; i++)
+                {
+                    var partObject = new GameObject(CreatePartName(document.Materials[i], i));
+                    partObject.transform.SetParent(partsRoot.transform, false);
+                    parts[i] = partObject.AddComponent<PmxModelPart>();
+                }
+
+                var renderers = new[] { renderer };
+                controller.Configure(mode, mesh, materials, renderer, renderers, parts);
+                for (int i = 0; i < parts.Length; i++)
+                    parts[i].Configure(i, controller, renderer);
+                return new PartHierarchyResult(renderers);
+            }
+
+            if (materials.Length == 0)
+            {
+                var meshObject = new GameObject("PMX Mesh");
+                meshObject.transform.SetParent(root.transform, false);
+                SkinnedMeshRenderer renderer = CreateRenderer(meshObject, mesh, materials,
+                    skeleton, 0);
+                var renderers = new[] { renderer };
+                controller.Configure(mode, mesh, materials, renderer, renderers,
+                    Array.Empty<PmxModelPart>());
+                return new PartHierarchyResult(renderers);
+            }
+
+            var separateRenderers = new SkinnedMeshRenderer[materials.Length];
+            var separateParts = new PmxModelPart[materials.Length];
+            for (int i = 0; i < materials.Length; i++)
+            {
+                var partObject = new GameObject(CreatePartName(document.Materials[i], i));
+                partObject.transform.SetParent(partsRoot.transform, false);
+                Mesh partMesh = PmxSubmeshMeshBuilder.BuildFullVertexPart(mesh, i);
+                partMesh.name = $"PMX Mesh Part {i:D6}";
+                context.AddObjectToAsset($"mesh/part/{i:D6}", partMesh);
+                separateRenderers[i] = CreateRenderer(partObject, partMesh,
+                    new[] { materials[i] }, skeleton, 0);
+                separateParts[i] = partObject.AddComponent<PmxModelPart>();
+            }
+
+            controller.Configure(mode, mesh, materials, null, separateRenderers, separateParts);
+            for (int i = 0; i < separateParts.Length; i++)
+                separateParts[i].Configure(i, controller, separateRenderers[i]);
+            return new PartHierarchyResult(separateRenderers);
+        }
+
+        private static SkinnedMeshRenderer CreateRenderer(GameObject target, Mesh mesh,
+            Material[] materials, SkeletonConversionResult skeleton, int unusedSubMeshIndex)
+        {
+            var renderer = target.AddComponent<SkinnedMeshRenderer>();
+            renderer.sharedMesh = mesh;
+            renderer.sharedMaterials = materials;
+            renderer.bones = skeleton.RendererBones;
+            renderer.rootBone = skeleton.RootBone;
+            renderer.localBounds = mesh.bounds;
+            return renderer;
+        }
+
+        private static string CreatePartName(PmxMaterial material, int index)
+        {
+            string sourceName = !string.IsNullOrWhiteSpace(material.Name)
+                ? material.Name
+                : material.EnglishName;
+            if (string.IsNullOrWhiteSpace(sourceName)) sourceName = "Unnamed";
+            char[] chars = sourceName.Trim().ToCharArray();
+            for (int i = 0; i < chars.Length; i++)
+            {
+                if (char.IsControl(chars[i]) || chars[i] == '/' || chars[i] == '\\')
+                    chars[i] = '_';
+            }
+            sourceName = new string(chars);
+            if (sourceName.Length > 80) sourceName = sourceName.Substring(0, 80);
+            return $"PMX Part {index:D6} - {sourceName}";
+        }
+
+        private sealed class PartHierarchyResult
+        {
+            public PartHierarchyResult(SkinnedMeshRenderer[] renderers)
+            {
+                Renderers = renderers;
+            }
+
+            public SkinnedMeshRenderer[] Renderers { get; }
+        }
 
         private static string ChooseRootName(PmxDocument document)
         {

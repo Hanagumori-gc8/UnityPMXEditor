@@ -19,6 +19,11 @@ namespace Hanagumori.UnityPmx
         public IReadOnlyList<Transform> Bones => bones;
         public int LastAppliedFrame { get; private set; } = -1;
 
+        public void CaptureCurrentPoseAsBaseline()
+        {
+            initialized = false;
+        }
+
         internal void Configure(PmxModelAsset asset, Transform[] importedBones)
         {
             modelAsset = asset;

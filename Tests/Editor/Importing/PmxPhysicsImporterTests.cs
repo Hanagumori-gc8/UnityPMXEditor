@@ -39,7 +39,7 @@ namespace Hanagumori.UnityPmx.Tests
             Assert.That(root.GetComponentsInChildren<Collider>(true), Is.Empty);
             Assert.That(root.GetComponentsInChildren<ConfigurableJoint>(true), Is.Empty);
             Assert.That(root.GetComponent<PmxPhysicsController>(), Is.Null);
-            Assert.That(root.GetComponent<SkinnedMeshRenderer>(), Is.Not.Null);
+            Assert.That(root.GetComponentInChildren<SkinnedMeshRenderer>(true), Is.Not.Null);
             Assert.That(metadata.RigidBodyMetadata.Length, Is.EqualTo(3));
             Assert.That(metadata.JointMetadata.Length, Is.EqualTo(1));
             Assert.That(metadata.SoftBodyMetadata.Single().SupportStatus,
@@ -52,7 +52,7 @@ namespace Hanagumori.UnityPmx.Tests
             var baked = new Mesh();
             try
             {
-                root.GetComponent<SkinnedMeshRenderer>().BakeMesh(baked);
+                root.GetComponentInChildren<SkinnedMeshRenderer>(true).BakeMesh(baked);
                 Assert.That(baked.vertexCount, Is.EqualTo(3));
             }
             finally
@@ -113,7 +113,7 @@ namespace Hanagumori.UnityPmx.Tests
                 Assert.That(Physics.GetIgnoreCollision(colliders[0], colliders[1]), Is.True);
 
                 Transform physicsBone = instance.GetComponentsInChildren<Transform>(true)
-                    .Single(value => value.name == "PMX Bone 000002");
+                    .Single(value => value.name.StartsWith("PMX Bone 000002"));
                 Vector3 baseline = physicsBone.localPosition;
                 physicsBone.localPosition += Vector3.one;
                 controller.RigidBodies[2].velocity = Vector3.one;

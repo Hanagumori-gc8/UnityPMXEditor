@@ -29,7 +29,7 @@ The status vocabulary is part of the compatibility contract:
 | Bone runtime | IK | Approximate | Bounded CCD, not MMD numerical equivalence |
 | Display | Display frames | Preserved only | Inspector/model metadata only |
 | Editor tools | Material submesh parts | Converted | Listed in Inspector and emitted as stable OBJ groups |
-| Editor tools | Bone visualization | Converted | Selected scene instances show bone lines and joints as Gizmos |
+| Editor tools | Bone visualization | Converted | Clickable joints select bones; root, mesh, and bone selection keeps Gizmos visible |
 | Export | FBX | Converted | Official Unity FBX Exporter; Generic skeleton/skinning, not MMD runtime equivalence |
 | Export | OBJ/MTL | Converted | Current static pose only; no bones, skinning, Morphs, animation, physics, or PMX metadata |
 | Physics | Physics=None | Converted | No physics components; mesh/skeleton remain usable |

@@ -14,6 +14,8 @@ namespace Hanagumori.UnityPmx
 
         [SerializeField] private PmxModelAsset modelAsset;
         [SerializeField] private SkinnedMeshRenderer targetRenderer;
+        [SerializeField] private SkinnedMeshRenderer[] targetRenderers =
+            Array.Empty<SkinnedMeshRenderer>();
         [SerializeField] private float importScale = 0.1f;
 
         [NonSerialized] private bool initialized;
@@ -23,21 +25,30 @@ namespace Hanagumori.UnityPmx
         [NonSerialized] private Vector3[] boneTranslations;
         [NonSerialized] private Quaternion[] boneRotations;
         [NonSerialized] private Mesh runtimeMesh;
+        [NonSerialized] private Mesh[] runtimeMeshes;
         [NonSerialized] private Vector2[] baselineUv;
         [NonSerialized] private List<Vector2> workingUv;
         [NonSerialized] private Color[] workingDiffuse;
         [NonSerialized] private Color[] workingSpecular;
         [NonSerialized] private float[] workingSmoothness;
         [NonSerialized] private MaterialPropertyBlock[] materialBlocks;
+        [NonSerialized] private RendererMaterialBinding[] materialBindings;
+        [NonSerialized] private PmxModelPartsController partsController;
         [NonSerialized] private PmxCoordinateConverter coordinates;
 
         public PmxModelAsset ModelAsset => modelAsset;
         public int MorphCount => directWeights?.Length ?? modelAsset?.MorphMetadata.Length ?? 0;
 
         internal void Configure(PmxModelAsset asset, SkinnedMeshRenderer renderer, float scale)
+            => Configure(asset, renderer != null
+                ? new[] { renderer }
+                : Array.Empty<SkinnedMeshRenderer>(), scale);
+
+        internal void Configure(PmxModelAsset asset, SkinnedMeshRenderer[] renderers, float scale)
         {
             modelAsset = asset;
-            targetRenderer = renderer;
+            targetRenderers = renderers ?? Array.Empty<SkinnedMeshRenderer>();
+            targetRenderer = FirstValidRenderer(targetRenderers);
             importScale = scale;
             initialized = false;
         }
@@ -110,7 +121,16 @@ namespace Hanagumori.UnityPmx
                 if (morph.RawType == (byte)PmxMorphType.Vertex)
                 {
                     if (morph.BlendShapeIndex >= 0)
-                        targetRenderer.SetBlendShapeWeight(morph.BlendShapeIndex, weight * 100f);
+                    {
+                        for (int rendererIndex = 0;
+                             rendererIndex < targetRenderers.Length; rendererIndex++)
+                        {
+                            SkinnedMeshRenderer renderer = targetRenderers[rendererIndex];
+                            if (renderer != null)
+                                renderer.SetBlendShapeWeight(morph.BlendShapeIndex,
+                                    weight * 100f);
+                        }
+                    }
                 }
                 else if (weight != 0f && morph.RawType == (byte)PmxMorphType.Bone)
                     ApplyBoneMorph(morph, weight);
@@ -120,7 +140,11 @@ namespace Hanagumori.UnityPmx
                     ApplyMaterialMorph(morph, weight);
             }
 
-            if (workingUv != null) runtimeMesh.SetUVs(0, workingUv);
+            if (workingUv != null)
+            {
+                for (int i = 0; i < runtimeMeshes.Length; i++)
+                    if (runtimeMeshes[i] != null) runtimeMeshes[i].SetUVs(0, workingUv);
+            }
             ApplyMaterialBlocks();
         }
 
@@ -128,8 +152,12 @@ namespace Hanagumori.UnityPmx
         {
             if (initialized) return;
             if (modelAsset == null) throw new InvalidOperationException("PmxMorphController has no PmxModelAsset.");
-            if (targetRenderer == null) targetRenderer = GetComponent<SkinnedMeshRenderer>();
+            if (targetRenderers == null || targetRenderers.Length == 0 ||
+                FirstValidRenderer(targetRenderers) == null)
+                targetRenderers = GetComponentsInChildren<SkinnedMeshRenderer>(true);
+            targetRenderer = FirstValidRenderer(targetRenderers);
             if (targetRenderer == null) throw new InvalidOperationException("PmxMorphController requires SkinnedMeshRenderer.");
+            partsController = GetComponent<PmxModelPartsController>();
 
             coordinates = new PmxCoordinateConverter(importScale);
             int morphCount = modelAsset.MorphMetadata.Length;
@@ -144,14 +172,24 @@ namespace Hanagumori.UnityPmx
                 if (modelAsset.MorphMetadata[i].RawType == (byte)PmxMorphType.Uv) { hasUvMorph = true; break; }
             if (hasUvMorph)
             {
-                runtimeMesh = Instantiate(targetRenderer.sharedMesh);
-                runtimeMesh.name = targetRenderer.sharedMesh.name + " Runtime UV";
-                targetRenderer.sharedMesh = runtimeMesh;
+                runtimeMeshes = new Mesh[targetRenderers.Length];
+                for (int i = 0; i < targetRenderers.Length; i++)
+                {
+                    if (targetRenderers[i] == null || targetRenderers[i].sharedMesh == null) continue;
+                    runtimeMeshes[i] = Instantiate(targetRenderers[i].sharedMesh);
+                    runtimeMeshes[i].name = targetRenderers[i].sharedMesh.name + " Runtime UV";
+                    targetRenderers[i].sharedMesh = runtimeMeshes[i];
+                }
+                runtimeMesh = runtimeMeshes.Length > 0 ? runtimeMeshes[0] : null;
                 baselineUv = runtimeMesh.uv;
                 workingUv = new List<Vector2>(baselineUv.Length);
                 for (int i = 0; i < baselineUv.Length; i++) workingUv.Add(baselineUv[i]);
             }
-            else runtimeMesh = targetRenderer.sharedMesh;
+            else
+            {
+                runtimeMesh = targetRenderer.sharedMesh;
+                runtimeMeshes = new[] { runtimeMesh };
+            }
 
             int materialCount = modelAsset.MaterialMetadata.Length;
             workingDiffuse = new Color[materialCount];
@@ -159,6 +197,7 @@ namespace Hanagumori.UnityPmx
             workingSmoothness = new float[materialCount];
             materialBlocks = new MaterialPropertyBlock[materialCount];
             for (int i = 0; i < materialCount; i++) materialBlocks[i] = new MaterialPropertyBlock();
+            materialBindings = BuildMaterialBindings(targetRenderers, materialCount);
             initialized = true;
         }
 
@@ -260,8 +299,69 @@ namespace Hanagumori.UnityPmx
                 block.SetColor(ColorId, workingDiffuse[i]);
                 block.SetColor(SpecColorId, workingSpecular[i]);
                 block.SetFloat(SmoothnessId, Mathf.Clamp01(workingSmoothness[i]));
-                targetRenderer.SetPropertyBlock(block, i);
             }
+
+            if (partsController != null &&
+                partsController.Mode == PmxPartHierarchyMode.ProxyNodes &&
+                partsController.SoloPartIndex >= 0)
+            {
+                int solo = partsController.SoloPartIndex;
+                if (solo < materialBlocks.Length && targetRenderer != null)
+                    targetRenderer.SetPropertyBlock(materialBlocks[solo], 0);
+                return;
+            }
+
+            for (int i = 0; i < materialBindings.Length; i++)
+            {
+                RendererMaterialBinding binding = materialBindings[i];
+                binding.Renderer.SetPropertyBlock(
+                    materialBlocks[binding.MaterialIndex], binding.RendererMaterialIndex);
+            }
+        }
+
+        private static RendererMaterialBinding[] BuildMaterialBindings(
+            SkinnedMeshRenderer[] renderers, int materialCount)
+        {
+            var bindings = new List<RendererMaterialBinding>();
+            for (int rendererIndex = 0; rendererIndex < renderers.Length; rendererIndex++)
+            {
+                SkinnedMeshRenderer renderer = renderers[rendererIndex];
+                if (renderer == null) continue;
+                Material[] rendererMaterials = renderer.sharedMaterials;
+                for (int materialSlot = 0; materialSlot < rendererMaterials.Length; materialSlot++)
+                {
+                    int materialIndex = renderers.Length > 1
+                        ? rendererIndex : materialSlot;
+                    if (materialIndex >= 0 && materialIndex < materialCount)
+                        bindings.Add(new RendererMaterialBinding(renderer,
+                            materialSlot, materialIndex));
+                }
+            }
+            return bindings.ToArray();
+        }
+
+        private static SkinnedMeshRenderer FirstValidRenderer(
+            SkinnedMeshRenderer[] renderers)
+        {
+            if (renderers == null) return null;
+            for (int i = 0; i < renderers.Length; i++)
+                if (renderers[i] != null) return renderers[i];
+            return null;
+        }
+
+        private readonly struct RendererMaterialBinding
+        {
+            public RendererMaterialBinding(SkinnedMeshRenderer renderer,
+                int rendererMaterialIndex, int materialIndex)
+            {
+                Renderer = renderer;
+                RendererMaterialIndex = rendererMaterialIndex;
+                MaterialIndex = materialIndex;
+            }
+
+            public SkinnedMeshRenderer Renderer { get; }
+            public int RendererMaterialIndex { get; }
+            public int MaterialIndex { get; }
         }
 
         private static int[] BuildDependencyOrder(PmxMorphMetadata[] morphs)

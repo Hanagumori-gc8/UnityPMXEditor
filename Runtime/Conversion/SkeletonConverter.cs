@@ -72,7 +72,7 @@ namespace Hanagumori.UnityPmx
             var bones = new Transform[count];
             for (int i = 0; i < count; i++)
             {
-                var boneObject = new GameObject($"PMX Bone {i:D6}");
+                var boneObject = new GameObject(CreateBoneHierarchyName(document.Bones[i], i));
                 bones[i] = boneObject.transform;
                 bones[i].SetParent(skeletonRoot, false);
             }
@@ -142,5 +142,24 @@ namespace Hanagumori.UnityPmx
 
         private static PmxVector3 Subtract(PmxVector3 value, PmxVector3 parent)
             => new PmxVector3(value.X - parent.X, value.Y - parent.Y, value.Z - parent.Z);
+
+        private static string CreateBoneHierarchyName(PmxBone bone, int index)
+        {
+            string displayName = !string.IsNullOrWhiteSpace(bone.Name)
+                ? bone.Name
+                : bone.EnglishName;
+            if (string.IsNullOrWhiteSpace(displayName)) return $"PMX Bone {index:D6}";
+
+            var characters = displayName.ToCharArray();
+            for (int i = 0; i < characters.Length; i++)
+            {
+                if (char.IsControl(characters[i])) characters[i] = ' ';
+            }
+            string cleaned = new string(characters).Trim();
+            if (cleaned.Length > 80) cleaned = cleaned.Substring(0, 80);
+            return string.IsNullOrEmpty(cleaned)
+                ? $"PMX Bone {index:D6}"
+                : $"PMX Bone {index:D6} - {cleaned}";
+        }
     }
 }

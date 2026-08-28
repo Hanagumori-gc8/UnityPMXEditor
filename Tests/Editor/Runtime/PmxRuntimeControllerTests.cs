@@ -37,7 +37,8 @@ namespace Hanagumori.UnityPmx.Tests
             {
                 PmxRuntimeController runtime = instance.GetComponent<PmxRuntimeController>();
                 PmxMorphController morph = runtime.MorphController;
-                SkinnedMeshRenderer renderer = instance.GetComponent<SkinnedMeshRenderer>();
+                SkinnedMeshRenderer renderer =
+                    instance.GetComponentInChildren<SkinnedMeshRenderer>(true);
 
                 float ikDistanceBefore = Vector3.Distance(
                     renderer.bones[3].position, renderer.bones[0].position);
@@ -113,7 +114,8 @@ namespace Hanagumori.UnityPmx.Tests
                 runtime.MorphController.SetMorphWeight(5, 0.25f);
                 runtime.MorphController.SetMorphWeight(6, 0.2f);
                 runtime.EvaluateFrame();
-                SkinnedMeshRenderer renderer = instance.GetComponent<SkinnedMeshRenderer>();
+                SkinnedMeshRenderer renderer =
+                    instance.GetComponentInChildren<SkinnedMeshRenderer>(true);
                 Vector3[] positions = renderer.bones.Select(value => value.localPosition).ToArray();
                 Quaternion[] rotations = renderer.bones.Select(value => value.localRotation).ToArray();
                 Vector2 uv = renderer.sharedMesh.uv[0];
@@ -133,6 +135,41 @@ namespace Hanagumori.UnityPmx.Tests
             }
             finally
             {
+                UnityEngine.Object.DestroyImmediate(instance);
+            }
+        }
+
+        [Test]
+        public void RuntimeEvaluationToggle_PreservesAndRecapturesManualBonePose()
+        {
+            GameObject instance = ImportAndInstantiate(PmxStaticImportFixtureBuilder.Build());
+            var restMesh = new Mesh();
+            var posedMesh = new Mesh();
+            try
+            {
+                PmxRuntimeController runtime = instance.GetComponent<PmxRuntimeController>();
+                SkinnedMeshRenderer renderer =
+                    instance.GetComponentInChildren<SkinnedMeshRenderer>(true);
+                Transform bone = runtime.BoneController.Bones[0];
+                renderer.BakeMesh(restMesh);
+
+                runtime.SetRuntimeEvaluationEnabled(false);
+                Assert.That(runtime.RuntimeEvaluationEnabled, Is.False);
+                bone.localPosition += new Vector3(0.2f, 0.1f, 0f);
+                Vector3 manualPosition = bone.localPosition;
+                renderer.BakeMesh(posedMesh);
+                Assert.That(Vector3.Distance(restMesh.vertices[0], posedMesh.vertices[0]),
+                    Is.GreaterThan(0.1f));
+
+                runtime.SetRuntimeEvaluationEnabled(true);
+                Assert.That(runtime.RuntimeEvaluationEnabled, Is.True);
+                runtime.EvaluateFrame();
+                Assert.That(bone.localPosition, Is.EqualTo(manualPosition));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(restMesh);
+                UnityEngine.Object.DestroyImmediate(posedMesh);
                 UnityEngine.Object.DestroyImmediate(instance);
             }
         }
@@ -225,7 +262,8 @@ namespace Hanagumori.UnityPmx.Tests
                 morph.SetMorphWeight(6, 0.1f);
                 for (int i = 0; i < 16; i++) runtime.EvaluateFrame();
 
-                SkinnedMeshRenderer renderer = instance.GetComponent<SkinnedMeshRenderer>();
+                SkinnedMeshRenderer renderer =
+                    instance.GetComponentInChildren<SkinnedMeshRenderer>(true);
                 int meshId = renderer.sharedMesh.GetInstanceID();
                 Material[] materials = renderer.sharedMaterials;
                 int materialId = materials[0].GetInstanceID();

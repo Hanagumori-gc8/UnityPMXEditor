@@ -79,6 +79,30 @@ namespace Hanagumori.UnityPmx
             return controller != null ? controller.gameObject : null;
         }
 
+        internal static GameObject InstantiateInScene(GameObject root)
+        {
+            if (root == null) throw new ArgumentNullException(nameof(root));
+            GameObject instance = PrefabUtility.InstantiatePrefab(root) as GameObject;
+            if (instance == null) instance = UnityEngine.Object.Instantiate(root);
+            instance.name = root.name;
+            ClearHideFlags(instance);
+            Undo.RegisterCreatedObjectUndo(instance, "Instantiate PMX Model");
+            return instance;
+        }
+
+        private static void ClearHideFlags(GameObject root)
+        {
+            foreach (Transform transform in root.GetComponentsInChildren<Transform>(true))
+            {
+                transform.gameObject.hideFlags = HideFlags.None;
+                Component[] components = transform.GetComponents<Component>();
+                for (int i = 0; i < components.Length; i++)
+                {
+                    if (components[i] != null) components[i].hideFlags = HideFlags.None;
+                }
+            }
+        }
+
         private static string SanitizeFileName(string value)
         {
             if (string.IsNullOrWhiteSpace(value)) return "PMX_Model";

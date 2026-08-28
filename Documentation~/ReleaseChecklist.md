@@ -1,4 +1,4 @@
-# v0.2.0 Release Checklist
+# v0.2.2 Release Checklist
 
 This checklist records release gates. Update the validation evidence before publishing;
 do not infer runtime correctness from compilation alone.
@@ -8,8 +8,8 @@ do not infer runtime correctness from compilation alone.
 - [x] Repository root is a valid `com.hanagumori.unity-pmx-editor` UPM package.
 - [x] Unity 2022.3.60f1 resolves the local file dependency and official FBX Exporter
       4.2.1 dependency in the URP 14.0.12 integration project.
-- [ ] A clean project resolves a Git URL pinned to the final 0.2.0 commit.
-- [ ] The authoritative GitHub URL resolves the pushed 0.2.0 release-candidate commit.
+- [ ] A clean project resolves a Git URL pinned to the final 0.2.2 commit.
+- [ ] The authoritative GitHub URL resolves the pushed 0.2.2 release-candidate commit.
 - [x] Upgrade from the synthetic 0.0.9 validation predecessor to 0.1.0 completes without
       missing scripts.
 - [x] Local 0.1.1 reimport corrects PMX UV V orientation and removes zero-weight
@@ -22,7 +22,7 @@ do not infer runtime correctness from compilation alone.
 ## Tests and Assets
 
 - [x] Full Format, Runtime PlayMode, Editor, and importer integration suites pass on the
-      final local 0.2.0 tree.
+      final local 0.2.2 tree.
 - [x] New FBX/OBJ/part/bone integration tests pass 4/4 in Unity EditMode.
 - [x] Format assembly has no Unity references; Runtime has no UnityEditor reference.
 - [x] No missing `.meta`, duplicate GUID, broken asmdef, absolute machine path, or package-
@@ -32,6 +32,8 @@ do not infer runtime correctness from compilation alone.
 - [x] Import, reimport, stable sub-assets, delete, and optional physics disable are tested.
 - [x] Three local PMX models export to FBX and OBJ/MTL, synchronously reimport, preserve
       FBX bone counts and OBJ material-group counts, and contain no non-finite vertices.
+- [x] Three local PMX models reimport with visible mesh/skeleton hierarchy nodes, editable
+      scene-instance HideFlags, indexed source bone names, and verified BakeMesh movement.
 
 ## Documentation and Legal
 
@@ -47,8 +49,8 @@ do not infer runtime correctness from compilation alone.
 - [ ] Release-candidate commit reviewed and intentionally created.
 - [ ] Clean working tree after the release-candidate commit.
 - [ ] GitHub URL resolves the package from the pushed commit.
-- [x] CHANGELOG records the 0.2.0 upload date.
-- [ ] `v0.2.0` tag and GitHub Release created only with explicit user authorization.
+- [ ] Replace the 0.2.2 `Unreleased` marker with an upload date when publishing.
+- [ ] `v0.2.2` tag and GitHub Release created only with explicit user authorization.
 
 ## Validation evidence
 
@@ -76,3 +78,7 @@ do not infer runtime correctness from compilation alone.
   all source faces.
 - The final local 0.2.0 tree passed 31/31 EditMode tests in 5.86 seconds and 23/23
   PlayMode tests in 60.18 seconds, including the 60-second experimental physics run.
+- The local 0.2.2 tree passed 33/33 EditMode tests in 6.38 seconds and 23/23 PlayMode
+  tests in 60.20 seconds. Three real PMX scene instances exposed 362, 630, and 567 PMX
+  bones, contained no hidden/not-editable scene components, and produced approximately
+  0.05 units of baked vertex movement after a weighted bone was moved.

@@ -117,12 +117,12 @@ namespace Hanagumori.UnityPmx.Tests
             Import(ModelPath, PmxStaticImportFixtureBuilder.BuildSkinnedFixture());
 
             GameObject root = AssetDatabase.LoadAssetAtPath<GameObject>(ModelPath);
-            SkinnedMeshRenderer renderer = root.GetComponent<SkinnedMeshRenderer>();
+            SkinnedMeshRenderer renderer = root.GetComponentInChildren<SkinnedMeshRenderer>(true);
             Assert.That(root.GetComponent<Animator>(), Is.Null);
             Assert.That(renderer, Is.Not.Null);
             Assert.That(renderer.bones.Length, Is.EqualTo(2));
-            Assert.That(renderer.bones[0].name, Is.EqualTo("PMX Bone 000000"));
-            Assert.That(renderer.bones[1].name, Is.EqualTo("PMX Bone 000001"));
+            Assert.That(renderer.bones[0].name, Does.StartWith("PMX Bone 000000 - "));
+            Assert.That(renderer.bones[1].name, Does.StartWith("PMX Bone 000001 - "));
             Assert.That(renderer.bones[0].parent, Is.EqualTo(renderer.bones[1]));
             Assert.That(renderer.bones[0].localPosition,
                 Is.EqualTo(new Vector3(0.05f, 0, 0)));
@@ -148,7 +148,8 @@ namespace Hanagumori.UnityPmx.Tests
             AssetDatabase.ImportAsset(ModelPath,
                 ImportAssetOptions.ForceSynchronousImport | ImportAssetOptions.ForceUpdate);
             GameObject reimportedRoot = AssetDatabase.LoadAssetAtPath<GameObject>(ModelPath);
-            SkinnedMeshRenderer reimportedRenderer = reimportedRoot.GetComponent<SkinnedMeshRenderer>();
+            SkinnedMeshRenderer reimportedRenderer =
+                reimportedRoot.GetComponentInChildren<SkinnedMeshRenderer>(true);
             CollectionAssert.AreEqual(boneIdsBefore, GetBoneLocalIds(reimportedRenderer));
             PmxModelAsset reimportedMetadata = AssetDatabase.LoadAllAssetsAtPath(ModelPath)
                 .OfType<PmxModelAsset>().Single();
@@ -170,7 +171,8 @@ namespace Hanagumori.UnityPmx.Tests
             Assert.That(preserved.AdvancedDeforms[0].RawSdefC, Is.EqualTo(new Vector3(1, 2, 3)));
             Assert.That(preserved.AdvancedDeforms[1].DeformType, Is.EqualTo(PmxVertexWeightType.Qdef));
             GameObject preservedRoot = AssetDatabase.LoadAssetAtPath<GameObject>(advancedPath);
-            SkinnedMeshRenderer preservedRenderer = preservedRoot.GetComponent<SkinnedMeshRenderer>();
+            SkinnedMeshRenderer preservedRenderer =
+                preservedRoot.GetComponentInChildren<SkinnedMeshRenderer>(true);
             Assert.That(preserved.Bones.Length, Is.EqualTo(2));
             Assert.That(preservedRenderer.bones.Length, Is.EqualTo(3));
             Assert.That(preservedRenderer.bones[2].name, Is.EqualTo("PMX Preserved Deform Anchor"));
@@ -181,7 +183,8 @@ namespace Hanagumori.UnityPmx.Tests
                 GameObject instance = UnityEngine.Object.Instantiate(preservedRoot);
                 try
                 {
-                    instance.GetComponent<SkinnedMeshRenderer>().BakeMesh(preservedBake);
+                    instance.GetComponentInChildren<SkinnedMeshRenderer>(true)
+                        .BakeMesh(preservedBake);
                     Vector3[] sourceVertices = preservedRenderer.sharedMesh.vertices;
                     Vector3[] bakedVertices = preservedBake.vertices;
                     Assert.That(bakedVertices.Length, Is.EqualTo(sourceVertices.Length));
@@ -214,7 +217,8 @@ namespace Hanagumori.UnityPmx.Tests
             Assert.That(approximated.AdvancedDeforms[0].RawSdefR1, Is.EqualTo(new Vector3(7, 8, 9)));
             Assert.That(approximated.Bones.Length, Is.EqualTo(2));
             GameObject approximatedRoot = AssetDatabase.LoadAssetAtPath<GameObject>(advancedPath);
-            Assert.That(approximatedRoot.GetComponent<SkinnedMeshRenderer>().bones.Length, Is.EqualTo(2));
+            Assert.That(approximatedRoot.GetComponentInChildren<SkinnedMeshRenderer>(true)
+                .bones.Length, Is.EqualTo(2));
         }
 
         [UnityTest]
@@ -229,7 +233,8 @@ namespace Hanagumori.UnityPmx.Tests
             try
             {
                 SetLayerRecursively(instance, 31);
-                SkinnedMeshRenderer renderer = instance.GetComponent<SkinnedMeshRenderer>();
+                SkinnedMeshRenderer renderer =
+                    instance.GetComponentInChildren<SkinnedMeshRenderer>(true);
                 renderer.updateWhenOffscreen = true;
                 visualMaterial = CreateVisualMaterial(renderer.sharedMaterial);
                 renderer.sharedMaterials = Enumerable.Repeat(

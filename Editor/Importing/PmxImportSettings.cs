@@ -11,6 +11,8 @@ namespace Hanagumori.UnityPmx
             PmxAdvancedDeformMode.PreserveOnly;
         [SerializeField] private PmxRuntimeCapabilityPath runtimeCapability =
             PmxRuntimeCapabilityPath.StandardApproximate;
+        [SerializeField] private PmxPartHierarchyMode partHierarchyMode =
+            PmxPartHierarchyMode.ProxyNodes;
         [SerializeField] private PmxMmdCompatibilityFallback mmdCompatibilityFallback =
             PmxMmdCompatibilityFallback.Reject;
         [SerializeField] private PmxPhysicsImportMode physicsMode = PmxPhysicsImportMode.None;
@@ -32,6 +34,12 @@ namespace Hanagumori.UnityPmx
         {
             get => runtimeCapability;
             set => runtimeCapability = value;
+        }
+
+        public PmxPartHierarchyMode PartHierarchyMode
+        {
+            get => partHierarchyMode;
+            set => partHierarchyMode = value;
         }
 
         public PmxMmdCompatibilityFallback MmdCompatibilityFallback
@@ -59,6 +67,9 @@ namespace Hanagumori.UnityPmx
             if (!Enum.IsDefined(typeof(PmxRuntimeCapabilityPath), runtimeCapability))
                 throw new PmxImportValidationException(
                     $"Unknown runtime capability value {(int)runtimeCapability}.");
+            if (!Enum.IsDefined(typeof(PmxPartHierarchyMode), partHierarchyMode))
+                throw new PmxImportValidationException(
+                    $"Unknown part hierarchy mode value {(int)partHierarchyMode}.");
             if (!Enum.IsDefined(typeof(PmxMmdCompatibilityFallback), mmdCompatibilityFallback))
                 throw new PmxImportValidationException(
                     $"Unknown MMD compatibility fallback value {(int)mmdCompatibilityFallback}.");

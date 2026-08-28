@@ -58,15 +58,48 @@ Generic 骨骼、蒙皮、BlendShapes、Morph/骨骼运行时控制器，以及�
 
 #### 查看模型部件和骨骼
 
+Project 窗口中的 `.pmx` 是 Unity 管理的导入源资产，其内部节点会被 Unity 标记为
+不可直接编辑。选择其 `PmxModelAsset` sub-asset 后点击
+**Instantiate Editable Scene Model**，或者把 PMX 主资产拖入场景，获得可见、可选、
+可编辑的 Hierarchy 实例：
+
+```text
+模型根节点
+|-- PMX Mesh             SkinnedMeshRenderer
+`-- PMX Skeleton
+    `-- PMX Bone 000000 - 来源骨骼名
+```
+
 展开 `.pmx` 资产并选择 `PmxModelAsset`，或选择场景实例上的
 `PmxRuntimeController`。Inspector 的 **Model Parts (Material Submeshes)** 会按稳定材质
 索引列出部件名称、三角形数量和 Unity Material；**Bones** 会显示骨骼原始名称、父级
 索引和 deformation layer。场景实例中可用 **Select** 定位骨骼 Transform。选中 PMX
-根对象时，Scene 视图会绘制骨骼连线和关节点 Gizmo。
+根对象、`PMX Mesh` 或任一骨骼时，Scene 视图会持续绘制骨骼；点击关节点 Gizmo 会
+直接选中对应骨骼，可使用 Move/Rotate 工具摆姿势。
 
-导入器仍使用一个 `SkinnedMeshRenderer`，不会为了显示部件而拆分并复制蒙皮和
-BlendShape 状态。需要独立选择静态部件时，可导出 OBJ；每个材质 submesh 会成为
-稳定的 OBJ `g` 分组。
+Play Mode 下默认的 **Runtime Evaluation** 会每帧执行 Morph、grant 和 IK，因此会覆盖
+手动骨骼姿态。需要手动摆姿势时先关闭该开关；重新开启时，当前手动姿态会成为新的
+运行时基线。
+
+导入设置提供两种可切换的 **Part Hierarchy Mode**：
+
+```text
+ProxyNodes（默认）              SeparateRenderers
+模型根节点                      模型根节点
+`-- PMX Model Parts             `-- PMX Model Parts
+    |-- PMX Part 000000             |-- PMX Part 000000  SkinnedMeshRenderer
+    |-- PMX Part 000001             |-- PMX Part 000001  SkinnedMeshRenderer
+    `-- ...                         `-- ...
+`-- PMX Mesh  SkinnedMeshRenderer
+```
+
+`ProxyNodes` 为每个材质 submesh 创建可选的代理节点，但几何仍由一个共享
+`SkinnedMeshRenderer` 绘制；移动代理节点不会独立移动几何。`SeparateRenderers`
+为每个材质分区创建真正独立的 `SkinnedMeshRenderer` 和 Mesh sub-asset，可在
+Hierarchy、Scene Gizmo 和 Inspector 中单独选中、移动、隐藏或赋材质，代价是每个
+部件增加一个渲染对象。两种模式都使用稳定的 `PMX Part {index:D6}` 标识，原始
+日文/英文名称仅作为显示后缀。根 Inspector 的 **Show Only** / **Show All** 和
+场景部件 Inspector 在两种模式下均可用。
 
 #### 导出 FBX 或 OBJ
 
@@ -89,6 +122,9 @@ FBX 通过 Unity 2022.3 对应的官方 `com.unity.formats.fbx` 4.2.1 导出，�
   `PreserveOnly`。当前没有专用 SDEF/QDEF 后端。
 - **Runtime Capability**：默认使用 `StandardApproximate`。`MmdCompatible` 仍受
   已记录的 SDEF/QDEF、IK、grant、材质和物理差异限制，不代表逐帧精确兼容 MMD。
+- **Part Hierarchy Mode**：`ProxyNodes` 使用一个共享蒙皮渲染器和可选代理节点；
+  `SeparateRenderers` 为每个材质分区创建独立的 `SkinnedMeshRenderer`，可分别
+  移动和隐藏，但会增加渲染对象数量。
 - **Physics Mode**：默认 `None`，不创建物理组件；`Experimental` 会把部分 PMX
   Bullet 语义近似转换为 Unity PhysX。
 
@@ -127,7 +163,7 @@ README 和 Inspector 使用以下互不混淆的状态：
 - **仅保留（Preserved only）**：数据保存在 `PmxModelAsset`，但没有运行时效果。
 - **未支持（Unsupported）**：没有对应后端，导入诊断会明确报告。
 
-| PMX 功能 | 0.2.0 状态 | 说明 |
+| PMX 功能 | 0.2.2 状态 | 说明 |
 | --- | --- | --- |
 | PMX 2.0/2.1、UTF-16LE/UTF-8、动态索引 | 已解析 | 严格有界读取；仅支持小端 |
 | 顶点、法线、基础 UV、三角形 | 已转换 | 坐标手性、绕序、法线、缩放和 UV V 方向集中处理 |
@@ -137,9 +173,10 @@ README 和 Inspector 使用以下互不混淆的状态：
 | 骨骼、层级、bindpose | 已转换 | 只生成 Generic 骨骼，不伪造 Humanoid Avatar |
 | Vertex Morph | 已转换 | 稳定、完整长度的 Unity BlendShapes |
 | Group/Flip/Bone/基础 UV/Material Morph | 近似支持 | 使用确定性运行时控制器，语义差异已记录 |
-| Additional UV 1-4、Impulse Morph | 仅保留 | 0.2.0 没有运行时效果 |
+| Additional UV 1-4、Impulse Morph | 仅保留 | 0.2.2 没有运行时效果 |
 | Display Frame | 仅保留 | 可通过模型元数据和 Inspector 查看 |
 | 材质部件与骨骼 Gizmo | 已转换 | Inspector 部件/骨骼列表；Scene 视图显示骨骼 Gizmo |
+| Part Hierarchy Mode | 已转换 | `ProxyNodes` 或 `SeparateRenderers`，可在 PMX Import Settings 切换 |
 | FBX 导出 | 已转换 | 使用 Unity 官方 FBX Exporter；保留 Generic 骨骼和蒙皮 |
 | OBJ/MTL 导出 | 已转换 | 当前静态姿态及材质分组；不包含骨骼、Morph 或动画 |
 | inherit/grant、deformation layer、IK | 近似支持 | 有界且确定性，但不保证与 MMD 数值一致 |
@@ -259,12 +296,29 @@ stable sub-asset IDs; Japanese display names never determine asset identity.
 
 #### Inspecting model parts and bones
 
+The `.pmx` in the Project window is a Unity-managed imported source asset. Unity marks
+its internal objects as non-editable. Select its `PmxModelAsset` sub-asset and click
+**Instantiate Editable Scene Model**, or drag the PMX main asset into a scene, to create
+a visible and editable Hierarchy instance:
+
+```text
+Model root
+|-- PMX Mesh             SkinnedMeshRenderer
+`-- PMX Skeleton
+    `-- PMX Bone 000000 - source bone name
+```
+
 Expand the `.pmx` asset and select `PmxModelAsset`, or select the
 `PmxRuntimeController` on a scene instance. **Model Parts (Material Submeshes)** lists
 each stable material index, part name, triangle count, and Unity Material. **Bones** lists
 the original bone name, parent index, and deformation layer. On a scene instance,
-**Select** focuses the corresponding bone Transform. Selecting the PMX root draws bone
-links and joint Gizmos in the Scene view.
+**Select** focuses the corresponding bone Transform. Selecting the PMX root, `PMX Mesh`,
+or any bone keeps the skeleton visible. Clicking a joint Gizmo selects that bone for the
+Move and Rotate tools.
+
+In Play Mode, **Runtime Evaluation** applies Morphs, grants, and IK every frame and
+therefore overwrites manual bone poses. Disable it while posing manually. Re-enabling it
+captures the current manual pose as the new runtime baseline.
 
 The importer deliberately retains one `SkinnedMeshRenderer`; it does not split and
 duplicate skinning and BlendShape state merely to expose parts. OBJ export emits one
@@ -292,7 +346,7 @@ semantics into exact support. See
 - **Scale** controls vertex, bone, Morph-translation, and physics-distance scaling in one
   place.
 - **Advanced Deform Mode** selects `Strict`, `Approximate`, or `PreserveOnly` for
-  SDEF/QDEF. There is no dedicated SDEF/QDEF backend in 0.2.0.
+  SDEF/QDEF. There is no dedicated SDEF/QDEF backend in 0.2.2.
 - **Runtime Capability** defaults to `StandardApproximate`. `MmdCompatible` remains
   subject to documented SDEF/QDEF, IK, grant, material, and physics differences and does
   not claim frame-identical MMD behavior.
@@ -339,7 +393,7 @@ README and Inspector status terms are intentionally distinct:
 - **Preserved only**: source data remains in `PmxModelAsset` without a runtime effect.
 - **Unsupported**: no backend exists and import diagnostics report that explicitly.
 
-| PMX feature | 0.2.0 status | Notes |
+| PMX feature | 0.2.2 status | Notes |
 | --- | --- | --- |
 | PMX 2.0/2.1, UTF-16LE/UTF-8, dynamic indices | Parsed | Strict bounded reader; little-endian only |
 | Vertex, normal, base UV, triangle geometry | Converted | Centralized handedness, winding, normal, scale, and UV V conversion |
@@ -349,7 +403,7 @@ README and Inspector status terms are intentionally distinct:
 | Skeleton, hierarchy, bindposes | Converted | Generic only; no fabricated Humanoid Avatar |
 | Vertex Morph | Converted | Stable full-length Unity BlendShapes |
 | Group/Flip/Bone/base UV/Material Morph | Approximate | Deterministic runtime controllers with documented differences |
-| Additional UV 1-4 and Impulse Morph | Preserved only | No runtime effect in 0.2.0 |
+| Additional UV 1-4 and Impulse Morph | Preserved only | No runtime effect in 0.2.2 |
 | Display frames | Preserved only | Available through model metadata and Inspector |
 | Material parts and bone Gizmos | Converted | Inspector part/bone lists and Scene-view bone Gizmos |
 | FBX export | Converted | Official Unity FBX Exporter; Generic hierarchy and skinning |

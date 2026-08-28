@@ -13,12 +13,37 @@ Format document.
   -> PmxValidator
   -> PmxCoordinateConverter
   -> MeshConverter + IMaterialConverter
-  -> root GameObject and stable sub-assets
+  -> root GameObject
+       |-- PMX Model Parts
+       |    |-- PMX Part 000000 ...
+       |    `-- PMX Part 000001 ...
+       |-- PMX Mesh (ProxyNodes only)
+       `-- PMX Skeleton (indexed source-name bones)
+  -> stable Mesh, Material, and PmxModelAsset sub-assets
 ```
 
 `PmxScriptedImporter` is editor-only. `PmxModelAsset`, the coordinate and mesh
 converters, and `IMaterialConverter` are runtime types and do not reference
 `UnityEditor`.
+
+## Part hierarchy modes
+
+`PmxImportSettings.PartHierarchyMode` controls the scene representation:
+
+- `ProxyNodes` (default) creates one canonical `PMX Mesh` renderer and stable
+  `PMX Part {index:D6}` proxy nodes under `PMX Model Parts`. Proxy nodes expose
+  selection, material assignment and solo/show-all controls; their transforms do
+  not alter the shared geometry.
+- `SeparateRenderers` creates one stable part node and one `SkinnedMeshRenderer`
+  per PMX material declaration. Each renderer receives a generated one-submesh
+  Mesh sub-asset with the original vertex channels, skinning data and BlendShapes,
+  so parts can be selected and transformed independently. This intentionally
+  increases renderer and draw-object count.
+
+Both modes retain the same PMX material order and metadata. Morph evaluation sends
+vertex BlendShape, UV and MaterialPropertyBlock updates to every active part renderer;
+there is no per-frame Material instantiation. Exporters inspect the active mode so
+OBJ and FBX do not repeat all material ranges for each separate renderer.
 
 An optional post-conversion physics path is available. `Physics=None` remains the default
 and leaves PMX physics records as metadata only. `Physics=Experimental` builds

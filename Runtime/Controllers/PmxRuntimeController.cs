@@ -27,6 +27,7 @@ namespace Hanagumori.UnityPmx
             PmxRuntimeCapabilityPath.StandardApproximate;
         [SerializeField] private PmxMmdCompatibilityFallback compatibilityFallback =
             PmxMmdCompatibilityFallback.Reject;
+        [SerializeField] private bool runtimeEvaluationEnabled = true;
         [SerializeField] private PmxCompatibilityReport compatibilityReport;
 
         [NonSerialized] private bool initialized;
@@ -37,6 +38,7 @@ namespace Hanagumori.UnityPmx
         public PmxRuntimeCapabilityPath ActiveCapability => compatibilityReport?.ActivePath ?? requestedCapability;
         public PmxCompatibilityReport CompatibilityReport => compatibilityReport;
         public PmxModelAsset ModelAsset => modelAsset;
+        public bool RuntimeEvaluationEnabled => runtimeEvaluationEnabled;
         public int EvaluatedFrameCount => evaluatedFrameCount;
         public PmxMorphController MorphController => morphController;
         public PmxBoneController BoneController => boneController;
@@ -53,6 +55,13 @@ namespace Hanagumori.UnityPmx
             initialized = false;
             EnsureInitialized();
             return compatibilityReport;
+        }
+
+        public void SetRuntimeEvaluationEnabled(bool enabled)
+        {
+            if (enabled && !runtimeEvaluationEnabled)
+                boneController?.CaptureCurrentPoseAsBaseline();
+            runtimeEvaluationEnabled = enabled;
         }
 
         internal void Configure(PmxModelAsset asset, PmxMorphController morph,
@@ -79,7 +88,10 @@ namespace Hanagumori.UnityPmx
             }
         }
 
-        private void LateUpdate() => EvaluateFrame();
+        private void LateUpdate()
+        {
+            if (runtimeEvaluationEnabled) EvaluateFrame();
+        }
 
         private void EnsureInitialized()
         {

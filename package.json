@@ -1,6 +1,6 @@
 {
   "name": "com.hanagumori.unity-pmx-editor",
-  "version": "0.2.0",
+  "version": "0.2.2",
   "displayName": "Unity PMX Editor",
   "description": "Imports PMX models, exposes parts and bone Gizmos, and exports FBX or OBJ in the Unity Editor.",
   "unity": "2022.3",

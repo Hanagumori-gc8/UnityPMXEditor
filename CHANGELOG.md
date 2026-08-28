@@ -2,6 +2,38 @@
 
 All notable changes to this package are documented in this file.
 
+## [0.2.2] - 2026-08-28
+
+### Added
+
+- Add switchable `ProxyNodes` and `SeparateRenderers` part hierarchy modes.
+- Add stable indexed PMX part nodes with scene selection, material replacement,
+  `Show Only`, and `Show All` controls.
+- Add independent one-submesh Mesh sub-assets and `SkinnedMeshRenderer` instances
+  for separately transformable material parts.
+- Extend Morph, UV, MaterialPropertyBlock, OBJ and FBX handling to multi-renderer
+  part hierarchies.
+
+### Changed
+
+- Update the package and documentation version to `0.2.2`.
+- Keep source PMX assets read-only; part editing is performed on editable scene instances.
+
+## [0.2.1] - 2026-08-28
+
+### Fixed
+
+- Replace non-interactive bone caps with clickable Scene-view bone handles that select
+  the corresponding Transform and remain visible while a mesh or bone child is selected.
+- Place `SkinnedMeshRenderer` on a visible `PMX Mesh` child and append source names to
+  stable indexed bone hierarchy names.
+- Add an explicit editable-scene instantiation command that clears imported source-asset
+  HideFlags recursively.
+- Keep export and editable-scene instantiation commands enabled inside Unity's otherwise
+  read-only `PmxModelAsset` Inspector.
+- Allow runtime Morph/grant/IK evaluation to be disabled while manually posing bones in
+  Play Mode; re-enabling captures the current manual pose as the new baseline.
+
 ## [0.2.0] - 2026-08-28
 
 ### Added

@@ -7,10 +7,12 @@ instance and inspect its `PmxRuntimeController`. The **Model Parts (Material Sub
 foldout lists the stable material index, PMX display name, triangle count, and Unity
 Material for every contiguous PMX material surface range.
 
-The importer intentionally keeps one `SkinnedMeshRenderer`. Splitting every material into
-a separate renderer would duplicate skinning and BlendShape state and would interfere
-with deterministic PMX Morph evaluation. OBJ export provides a stable `g` group per
-material submesh for tools that need separately selectable static parts.
+The importer exposes two `Part Hierarchy Mode` choices. `ProxyNodes` keeps one canonical
+`SkinnedMeshRenderer` and creates selectable proxy nodes; `SeparateRenderers` creates one
+renderer and one generated one-submesh Mesh sub-asset per material part. The latter costs
+more renderer objects but permits independent Transform edits. Both modes keep stable
+indexed identities and deterministic Morph evaluation. OBJ export provides a stable `g`
+group per material part in either mode.
 
 ## Inspect bones
 

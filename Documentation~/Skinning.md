@@ -13,12 +13,24 @@ indices beyond the Bone section are rejected before hierarchy construction.
 
 Hierarchy names and creation order are index-based:
 
-- container: `PMX Skeleton`
-- bone N: `PMX Bone 000000`, `PMX Bone 000001`, and so on
+- mesh renderer: `PMX Mesh`
+- skeleton container: `PMX Skeleton`
+- bone N: `PMX Bone 000000 - source name`, `PMX Bone 000001 - source name`, and so on
 
 PMX Japanese or duplicate display names do not control hierarchy identity.
 With exactly one top-level PMX bone, that Transform is `rootBone`. Multiple
 top-level bones use the stable `PMX Skeleton` container as `rootBone`.
+
+Unity protects the hierarchy embedded in the imported Project asset with
+`HideInHierarchy | NotEditable`. Edit a scene instance, not the source object. Drag the
+PMX main asset into a scene or use **Instantiate Editable Scene Model** on its
+`PmxModelAsset`; the resulting `PMX Mesh`, `PMX Skeleton`, bone GameObjects, and
+components have `HideFlags.None`.
+
+Bone joint Gizmos are clickable while the PMX root, mesh node, or any descendant bone is
+selected. In Play Mode, disable **Runtime Evaluation** before manual posing so the
+deterministic Morph/grant/IK pass does not restore its baseline every `LateUpdate`.
+Re-enabling evaluation captures the current manual pose as the new baseline.
 
 PMX bone positions are model-space positions. A child local position is its
 converted model position minus its converted parent position. Top-level bones
@@ -52,7 +64,7 @@ The same weights and bindposes apply when the mesh uses `IndexFormat.UInt32`.
 
 `PmxImportSettings.AdvancedDeformMode` has three explicit modes:
 
-- `Strict`: aborts import when SDEF or QDEF is encountered because 0.2.0 has
+- `Strict`: aborts import when SDEF or QDEF is encountered because 0.2.2 has
   no exact implementation.
 - `Approximate`: applies the stored linear bone indices and weights as BDEF and
   emits an explicit warning that the result is not exact SDEF/QDEF support.

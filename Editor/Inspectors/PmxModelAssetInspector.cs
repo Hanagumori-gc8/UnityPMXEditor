@@ -86,9 +86,10 @@ namespace Hanagumori.UnityPmx
 
         private static void DrawExportButtons(PmxModelAsset asset)
         {
-            string assetPath = AssetDatabase.GetAssetPath(asset);
-            var root = AssetDatabase.LoadMainAssetAtPath(assetPath) as GameObject;
-            using (new EditorGUI.DisabledScope(root == null))
+            GameObject root = ResolveImportedRoot(asset);
+            bool previousEnabled = GUI.enabled;
+            GUI.enabled = root != null;
+            try
             {
                 EditorGUILayout.BeginHorizontal();
                 if (GUILayout.Button("Export FBX..."))
@@ -96,7 +97,27 @@ namespace Hanagumori.UnityPmx
                 if (GUILayout.Button("Export OBJ..."))
                     PmxModelExportMenu.ExportWithDialog(root, PmxModelExportFormat.Obj);
                 EditorGUILayout.EndHorizontal();
+                if (GUILayout.Button("Instantiate Editable Scene Model"))
+                {
+                    GameObject instance = PmxModelExportMenu.InstantiateInScene(root);
+                    Selection.activeGameObject = instance;
+                }
             }
+            finally
+            {
+                GUI.enabled = previousEnabled;
+            }
+        }
+
+        internal static GameObject ResolveImportedRoot(PmxModelAsset asset)
+        {
+            if (asset == null) return null;
+            string assetPath = AssetDatabase.GetAssetPath(asset);
+            if (string.IsNullOrEmpty(assetPath)) return null;
+            GameObject root = AssetDatabase.LoadAssetAtPath<GameObject>(assetPath);
+            if (root != null) return root;
+            return AssetDatabase.LoadAllAssetsAtPath(assetPath).OfType<GameObject>()
+                .FirstOrDefault(value => value.GetComponent<PmxRuntimeController>() != null);
         }
 
         private static void DrawStatus(PmxModelAsset asset, PmxFeatureSupportStatus status, Color color)

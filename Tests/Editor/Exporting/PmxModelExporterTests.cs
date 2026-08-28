@@ -1,11 +1,12 @@
 using System;
+using System.Collections;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Text.RegularExpressions;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.TestTools;
 
 namespace Hanagumori.UnityPmx.Tests
 {
@@ -78,7 +79,8 @@ namespace Hanagumori.UnityPmx.Tests
         public void FbxExport_PreservesSkinnedMeshAndBoneHierarchyOnReimport()
         {
             GameObject source = AssetDatabase.LoadAssetAtPath<GameObject>(PmxPath);
-            SkinnedMeshRenderer sourceRenderer = source.GetComponent<SkinnedMeshRenderer>();
+            SkinnedMeshRenderer sourceRenderer =
+                source.GetComponentInChildren<SkinnedMeshRenderer>(true);
             Assert.That(sourceRenderer, Is.Not.Null);
             Assert.That(sourceRenderer.bones.Length, Is.EqualTo(1));
 
@@ -120,21 +122,49 @@ namespace Hanagumori.UnityPmx.Tests
             Assert.That(metadata.BoneMetadata.Length, Is.EqualTo(1));
             Assert.That(controller.ModelAsset, Is.SameAs(metadata));
             Assert.That(controller.BoneController.Bones.Count, Is.EqualTo(1));
-            MethodInfo gizmoMethod = typeof(PmxBoneGizmoDrawer).GetMethod("DrawBones",
-                BindingFlags.Static | BindingFlags.NonPublic);
-            Assert.That(gizmoMethod, Is.Not.Null);
-            Assert.That(gizmoMethod.GetCustomAttributes(typeof(DrawGizmo), false).Length,
+            Assert.That(PmxModelAssetInspector.ResolveImportedRoot(metadata), Is.SameAs(root));
+            Assert.That(typeof(PmxBoneGizmoDrawer)
+                .GetCustomAttributes(typeof(InitializeOnLoadAttribute), false).Length,
                 Is.EqualTo(1));
 
             GameObject instance = UnityEngine.Object.Instantiate(root);
+            var unrelated = new GameObject("Unrelated");
             try
             {
-                Transform bone = instance.GetComponent<PmxRuntimeController>()
-                    .BoneController.Bones[0];
+                PmxRuntimeController instanceController =
+                    instance.GetComponent<PmxRuntimeController>();
+                Transform bone = instanceController.BoneController.Bones[0];
+                Transform meshTransform = instance
+                    .GetComponentInChildren<SkinnedMeshRenderer>(true).transform;
                 Assert.That(PmxModelExportMenu.FindPmxRoot(bone.gameObject), Is.SameAs(instance));
+                Assert.That(PmxBoneGizmoDrawer.ShouldDraw(instanceController,
+                    instance.transform), Is.True);
+                Assert.That(PmxBoneGizmoDrawer.ShouldDraw(instanceController,
+                    meshTransform), Is.True);
+                Assert.That(PmxBoneGizmoDrawer.ShouldDraw(instanceController, bone), Is.True);
+                Assert.That(PmxBoneGizmoDrawer.ShouldDraw(instanceController,
+                    unrelated.transform), Is.False);
+                Assert.That(PmxBoneGizmoDrawer.ResolveController(bone),
+                    Is.SameAs(instanceController));
+
+                GameObject editable = PmxModelExportMenu.InstantiateInScene(root);
+                try
+                {
+                    Assert.That(editable.GetComponentInChildren<SkinnedMeshRenderer>(true),
+                        Is.Not.Null);
+                    Assert.That(editable.transform.Find("PMX Mesh"), Is.Not.Null);
+                    Assert.That(editable.transform.Find("PMX Skeleton"), Is.Not.Null);
+                    Assert.That(editable.GetComponentsInChildren<Transform>(true)
+                        .All(value => value.gameObject.hideFlags == HideFlags.None), Is.True);
+                }
+                finally
+                {
+                    UnityEngine.Object.DestroyImmediate(editable);
+                }
             }
             finally
             {
+                UnityEngine.Object.DestroyImmediate(unrelated);
                 UnityEngine.Object.DestroyImmediate(instance);
             }
 
@@ -149,6 +179,55 @@ namespace Hanagumori.UnityPmx.Tests
             {
                 UnityEngine.Object.DestroyImmediate(metadataInspector);
                 UnityEngine.Object.DestroyImmediate(controllerInspector);
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator BoneSceneInteraction_SelectsBoneAtExactGuiPosition()
+        {
+            GameObject source = AssetDatabase.LoadAssetAtPath<GameObject>(PmxPath);
+            GameObject instance = UnityEngine.Object.Instantiate(source);
+            UnityEngine.Object previousSelection = Selection.activeObject;
+            SceneView sceneView = SceneView.lastActiveSceneView ??
+                                  EditorWindow.GetWindow<SceneView>();
+            bool attempted = false;
+            bool selected = false;
+            Action<SceneView> callback = null;
+            try
+            {
+                PmxRuntimeController controller = instance.GetComponent<PmxRuntimeController>();
+                Transform targetBone = controller.BoneController.Bones[0];
+                callback = current =>
+                {
+                    if (attempted || current != sceneView ||
+                        Event.current.type != EventType.Repaint) return;
+                    Vector2 position = HandleUtility.WorldToGUIPoint(targetBone.position);
+                    selected = PmxBoneGizmoDrawer.TrySelectBoneAtGuiPosition(
+                        controller, position);
+                    attempted = true;
+                };
+                SceneView.duringSceneGui += callback;
+                Selection.activeGameObject = instance;
+                sceneView.drawGizmos = true;
+                sceneView.FrameSelected(true);
+                sceneView.Repaint();
+
+                double deadline = EditorApplication.timeSinceStartup + 5d;
+                while (!attempted && EditorApplication.timeSinceStartup < deadline)
+                {
+                    sceneView.Repaint();
+                    yield return null;
+                }
+                Assert.That(attempted, Is.True);
+                Assert.That(selected, Is.True);
+                Assert.That(Selection.activeTransform, Is.EqualTo(targetBone));
+                Assert.That(PmxBoneGizmoDrawer.ShouldDraw(controller, targetBone), Is.True);
+            }
+            finally
+            {
+                if (callback != null) SceneView.duringSceneGui -= callback;
+                Selection.activeObject = previousSelection;
+                UnityEngine.Object.DestroyImmediate(instance);
             }
         }
 

@@ -6,7 +6,8 @@ namespace Hanagumori.UnityPmx
 {
     internal static class PmxInspectorGui
     {
-        public static void DrawParts(PmxModelAsset asset)
+        public static void DrawParts(PmxModelAsset asset,
+            PmxModelPartsController controller = null)
         {
             EditorGUI.indentLevel++;
             for (int i = 0; i < asset.MaterialMetadata.Length; i++)
@@ -19,8 +20,34 @@ namespace Hanagumori.UnityPmx
                 EditorGUILayout.LabelField($"Part {i:D4}", displayName ?? string.Empty,
                     EditorStyles.boldLabel);
                 EditorGUILayout.LabelField("Triangles", (part.SurfaceIndexCount / 3).ToString());
-                Material material = i < asset.Materials.Length ? asset.Materials[i] : null;
-                EditorGUILayout.ObjectField("Material", material, typeof(Material), false);
+                PmxModelPart scenePart = controller != null && i < controller.Parts.Length
+                    ? controller.Parts[i]
+                    : null;
+                Material material = controller != null && i < controller.Materials.Length
+                    ? controller.Materials[i]
+                    : i < asset.Materials.Length ? asset.Materials[i] : null;
+                Material replacement = (Material)EditorGUILayout.ObjectField(
+                    "Material", material, typeof(Material), false);
+                if (controller != null && replacement != material)
+                {
+                    Undo.RecordObject(controller, "Assign PMX Part Material");
+                    if (scenePart != null && scenePart.TargetRenderer != null)
+                        Undo.RecordObject(scenePart.TargetRenderer, "Assign PMX Part Material");
+                    controller.SetPartMaterial(i, replacement);
+                    EditorUtility.SetDirty(controller);
+                }
+                if (scenePart != null)
+                {
+                    EditorGUILayout.BeginHorizontal();
+                    if (GUILayout.Button("Select Part"))
+                    {
+                        Selection.activeGameObject = scenePart.gameObject;
+                        SceneView.FrameLastActiveSceneView();
+                    }
+                    if (GUILayout.Button("Show Only")) controller.ShowOnlyPart(i);
+                    if (GUILayout.Button("Show All")) controller.ShowAllParts();
+                    EditorGUILayout.EndHorizontal();
+                }
                 EditorGUILayout.EndVertical();
             }
             EditorGUI.indentLevel--;

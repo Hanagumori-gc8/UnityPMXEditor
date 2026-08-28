@@ -45,15 +45,29 @@ namespace Hanagumori.UnityPmx
         private static void CollectSources(GameObject root, List<MeshSource> destination)
         {
             Matrix4x4 worldToRoot = root.transform.worldToLocalMatrix;
+            PmxModelPartsController partsController =
+                root.GetComponent<PmxModelPartsController>();
             foreach (SkinnedMeshRenderer renderer in
                      root.GetComponentsInChildren<SkinnedMeshRenderer>(true))
             {
                 if (renderer.sharedMesh == null) continue;
                 var baked = new Mesh { name = renderer.sharedMesh.name + " [OBJ Bake]" };
                 renderer.BakeMesh(baked);
+                int firstSubMesh = 0;
+                int subMeshCount = renderer.sharedMaterials.Length;
+                Material[] exportMaterials = renderer.sharedMaterials;
+                if (partsController != null &&
+                    partsController.Mode == PmxPartHierarchyMode.ProxyNodes &&
+                    renderer == partsController.CanonicalRenderer)
+                {
+                    firstSubMesh = 0;
+                    subMeshCount = baked.subMeshCount;
+                    exportMaterials = partsController.Materials;
+                }
                 destination.Add(new MeshSource(baked,
                     worldToRoot * renderer.transform.localToWorldMatrix,
-                    renderer.sharedMaterials, renderer.name, true));
+                    exportMaterials, renderer.name, true,
+                    firstSubMesh, subMeshCount));
             }
 
             foreach (MeshFilter filter in root.GetComponentsInChildren<MeshFilter>(true))
@@ -62,7 +76,8 @@ namespace Hanagumori.UnityPmx
                 if (renderer == null || filter.sharedMesh == null) continue;
                 destination.Add(new MeshSource(filter.sharedMesh,
                     worldToRoot * filter.transform.localToWorldMatrix,
-                    renderer.sharedMaterials, filter.name, false));
+                    renderer.sharedMaterials, filter.name, false,
+                    0, filter.sharedMesh.subMeshCount));
             }
 
             if (destination.Count == 0)
@@ -90,7 +105,11 @@ namespace Hanagumori.UnityPmx
                 if (normals.Length != 0 && normals.Length != mesh.vertexCount)
                     throw new InvalidOperationException($"Mesh '{mesh.name}' has an invalid normal count.");
 
-                for (int subMesh = 0; subMesh < mesh.subMeshCount; subMesh++)
+                ValidateSubMeshRange(sources[sourceIndex]);
+                int endSubMesh = sources[sourceIndex].FirstSubMesh +
+                                 sources[sourceIndex].SubMeshCount;
+                for (int subMesh = sources[sourceIndex].FirstSubMesh;
+                     subMesh < endSubMesh; subMesh++)
                 {
                     if (mesh.GetTopology(subMesh) != MeshTopology.Triangles)
                         throw new InvalidOperationException(
@@ -178,16 +197,19 @@ namespace Hanagumori.UnityPmx
                         }
                     }
 
-                    for (int subMesh = 0; subMesh < mesh.subMeshCount; subMesh++)
+                    int endSubMesh = source.FirstSubMesh + source.SubMeshCount;
+                    for (int subMesh = source.FirstSubMesh;
+                         subMesh < endSubMesh; subMesh++)
                     {
-                        string sourceName = SourcePartName(metadata, sources.Count,
-                            sourceIndex, subMesh, source.Name);
+                        int materialSlot = subMesh - source.FirstSubMesh;
+                        string sourceName = SourcePartName(metadata,
+                            subMesh, source.Name);
                         writer.Write("g part_");
                         writer.Write(partCount.ToString("D6", Invariant));
                         writer.Write('_');
                         writer.WriteLine(SanitizeName(sourceName, "unnamed"));
-                        Material material = subMesh < source.Materials.Length
-                            ? source.Materials[subMesh]
+                        Material material = materialSlot < source.Materials.Length
+                            ? source.Materials[materialSlot]
                             : null;
                         writer.Write("usemtl ");
                         writer.WriteLine(materials.Register(material, partCount));
@@ -259,11 +281,10 @@ namespace Hanagumori.UnityPmx
             return defaultValue;
         }
 
-        private static string SourcePartName(PmxModelAsset metadata, int sourceCount,
-            int sourceIndex, int subMesh, string fallback)
+        private static string SourcePartName(PmxModelAsset metadata,
+            int subMesh, string fallback)
         {
-            if (metadata != null && sourceCount == 1 && sourceIndex == 0 &&
-                subMesh < metadata.MaterialMetadata.Length)
+            if (metadata != null && subMesh < metadata.MaterialMetadata.Length)
             {
                 PmxMaterialMetadata material = metadata.MaterialMetadata[subMesh];
                 return string.IsNullOrWhiteSpace(material.EnglishName)
@@ -271,6 +292,16 @@ namespace Hanagumori.UnityPmx
                     : material.EnglishName;
             }
             return fallback + "_" + subMesh.ToString("D6", Invariant);
+        }
+
+        private static void ValidateSubMeshRange(MeshSource source)
+        {
+            if (source.FirstSubMesh < 0 || source.SubMeshCount < 0 ||
+                source.FirstSubMesh > source.Mesh.subMeshCount - source.SubMeshCount)
+                throw new InvalidOperationException(
+                    $"Mesh '{source.Mesh.name}' export submesh range " +
+                    $"[{source.FirstSubMesh}, {source.FirstSubMesh + source.SubMeshCount}) " +
+                    $"is outside [0, {source.Mesh.subMeshCount}).");
         }
 
         private static void WriteFaceVertex(TextWriter writer, int localIndex,
@@ -333,19 +364,23 @@ namespace Hanagumori.UnityPmx
         private sealed class MeshSource : IDisposable
         {
             public MeshSource(Mesh mesh, Matrix4x4 localToRoot, Material[] materials,
-                string name, bool ownsMesh)
+                string name, bool ownsMesh, int firstSubMesh, int subMeshCount)
             {
                 Mesh = mesh;
                 LocalToRoot = localToRoot;
                 Materials = materials ?? Array.Empty<Material>();
                 Name = name;
                 OwnsMesh = ownsMesh;
+                FirstSubMesh = firstSubMesh;
+                SubMeshCount = subMeshCount;
             }
 
             public Mesh Mesh { get; }
             public Matrix4x4 LocalToRoot { get; }
             public Material[] Materials { get; }
             public string Name { get; }
+            public int FirstSubMesh { get; }
+            public int SubMeshCount { get; }
             private bool OwnsMesh { get; }
             public void Dispose()
             {

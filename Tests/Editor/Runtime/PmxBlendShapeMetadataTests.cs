@@ -32,7 +32,7 @@ namespace Hanagumori.UnityPmx.Tests
         {
             Import(PmxStaticImportFixtureBuilder.BuildMorphMetadataFixture());
             GameObject root = AssetDatabase.LoadAssetAtPath<GameObject>(ModelPath);
-            SkinnedMeshRenderer renderer = root.GetComponent<SkinnedMeshRenderer>();
+            SkinnedMeshRenderer renderer = root.GetComponentInChildren<SkinnedMeshRenderer>(true);
             Mesh mesh = renderer.sharedMesh;
 
             Assert.That(mesh.blendShapeCount, Is.EqualTo(3));
@@ -61,7 +61,8 @@ namespace Hanagumori.UnityPmx.Tests
             var baked = new Mesh();
             try
             {
-                SkinnedMeshRenderer instanceRenderer = instance.GetComponent<SkinnedMeshRenderer>();
+                SkinnedMeshRenderer instanceRenderer =
+                    instance.GetComponentInChildren<SkinnedMeshRenderer>(true);
                 instanceRenderer.SetBlendShapeWeight(0, 100f);
                 instanceRenderer.BakeMesh(baked);
                 Assert.That(Vector3.Distance(
@@ -79,7 +80,7 @@ namespace Hanagumori.UnityPmx.Tests
             AssetDatabase.ImportAsset(ModelPath,
                 ImportAssetOptions.ForceSynchronousImport | ImportAssetOptions.ForceUpdate);
             Mesh reimported = AssetDatabase.LoadAssetAtPath<GameObject>(ModelPath)
-                .GetComponent<SkinnedMeshRenderer>().sharedMesh;
+                .GetComponentInChildren<SkinnedMeshRenderer>(true).sharedMesh;
             CollectionAssert.AreEqual(namesBefore, Enumerable.Range(0, reimported.blendShapeCount)
                 .Select(reimported.GetBlendShapeName).ToArray());
         }

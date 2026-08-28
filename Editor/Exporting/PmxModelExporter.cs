@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
 using UnityEditor.Formats.Fbx.Exporter;
@@ -58,11 +59,8 @@ namespace Hanagumori.UnityPmx
 
         private static PmxModelExportResult ExportFbx(GameObject source, string fullPath)
         {
-            CountGeometry(source, out int vertexCount, out int triangleCount, out int partCount);
-            if (partCount == 0)
-                throw new InvalidOperationException("The selected PMX model has no exportable mesh parts.");
-
             GameObject instance = UnityEngine.Object.Instantiate(source);
+            var temporaryMeshes = new List<Mesh>();
             instance.name = source.name;
             instance.hideFlags = HideFlags.DontSave;
             instance.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
@@ -70,6 +68,12 @@ namespace Hanagumori.UnityPmx
             instance.SetActive(true);
             try
             {
+                PrepareFbxPartMeshes(instance, temporaryMeshes);
+                CountGeometry(instance, out int vertexCount,
+                    out int triangleCount, out int partCount);
+                if (partCount == 0)
+                    throw new InvalidOperationException(
+                        "The selected PMX model has no exportable mesh parts.");
                 string exportedPath = ModelExporter.ExportObject(fullPath, instance);
                 if (string.IsNullOrEmpty(exportedPath) || !File.Exists(exportedPath))
                     throw new InvalidOperationException("Unity FBX Exporter did not produce an FBX file.");
@@ -79,6 +83,30 @@ namespace Hanagumori.UnityPmx
             finally
             {
                 UnityEngine.Object.DestroyImmediate(instance);
+                for (int i = 0; i < temporaryMeshes.Count; i++)
+                    if (temporaryMeshes[i] != null)
+                        UnityEngine.Object.DestroyImmediate(temporaryMeshes[i]);
+            }
+        }
+
+        private static void PrepareFbxPartMeshes(GameObject instance,
+            List<Mesh> temporaryMeshes)
+        {
+            PmxModelPartsController controller =
+                instance.GetComponent<PmxModelPartsController>();
+            if (controller == null ||
+                controller.Mode != PmxPartHierarchyMode.SeparateRenderers) return;
+
+            SkinnedMeshRenderer[] renderers = controller.Renderers;
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                SkinnedMeshRenderer renderer = renderers[i];
+                if (renderer == null || renderer.sharedMesh == null) continue;
+                int subMeshIndex = 0;
+                Mesh partMesh = PmxSubmeshMeshBuilder.Build(
+                    renderer.sharedMesh, subMeshIndex);
+                temporaryMeshes.Add(partMesh);
+                renderer.sharedMesh = partMesh;
             }
         }
 

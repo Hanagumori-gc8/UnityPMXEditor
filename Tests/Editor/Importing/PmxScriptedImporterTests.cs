@@ -86,10 +86,17 @@ namespace Hanagumori.UnityPmx.Tests
 
             GameObject root = AssetDatabase.LoadAssetAtPath<GameObject>(ModelPath);
             Assert.That(root, Is.Not.Null);
-            SkinnedMeshRenderer renderer = root.GetComponent<SkinnedMeshRenderer>();
+            SkinnedMeshRenderer renderer = root.GetComponentInChildren<SkinnedMeshRenderer>(true);
             Mesh mesh = renderer.sharedMesh;
             Assert.That(mesh, Is.Not.Null);
             Assert.That(renderer, Is.Not.Null);
+            Assert.That(root.GetComponent<SkinnedMeshRenderer>(), Is.Null);
+            Assert.That(renderer.gameObject.name, Is.EqualTo("PMX Mesh"));
+            Assert.That(renderer.transform.parent, Is.EqualTo(root.transform));
+            Transform skeleton = root.transform.Cast<Transform>()
+                .Single(value => value.name == "PMX Skeleton");
+            Assert.That((skeleton.hideFlags & HideFlags.NotEditable) != 0, Is.True);
+            Assert.That((renderer.gameObject.hideFlags & HideFlags.NotEditable) != 0, Is.True);
             Assert.That(mesh.vertexCount, Is.EqualTo(4));
             Assert.That(mesh.indexFormat, Is.EqualTo(IndexFormat.UInt16));
             Assert.That(mesh.subMeshCount, Is.EqualTo(2));
@@ -122,8 +129,12 @@ namespace Hanagumori.UnityPmx.Tests
             GameObject instance = UnityEngine.Object.Instantiate(root);
             try
             {
-                Assert.That(instance.GetComponent<SkinnedMeshRenderer>().sharedMesh, Is.EqualTo(mesh));
-                Assert.That(instance.GetComponent<SkinnedMeshRenderer>().sharedMaterials.Length, Is.EqualTo(2));
+                Assert.That(instance.GetComponentsInChildren<Transform>(true)
+                    .All(value => value.gameObject.hideFlags == HideFlags.None), Is.True);
+                Assert.That(instance.GetComponentInChildren<SkinnedMeshRenderer>(true).sharedMesh,
+                    Is.EqualTo(mesh));
+                Assert.That(instance.GetComponentInChildren<SkinnedMeshRenderer>(true)
+                    .sharedMaterials.Length, Is.EqualTo(2));
             }
             finally
             {
@@ -158,9 +169,70 @@ namespace Hanagumori.UnityPmx.Tests
 
             GameObject root = AssetDatabase.LoadAssetAtPath<GameObject>(largePath);
             Assert.That(root, Is.Not.Null);
-            Mesh mesh = root.GetComponent<SkinnedMeshRenderer>().sharedMesh;
+            Mesh mesh = root.GetComponentInChildren<SkinnedMeshRenderer>(true).sharedMesh;
             Assert.That(mesh.vertexCount, Is.EqualTo(65536));
             Assert.That(mesh.indexFormat, Is.EqualTo(IndexFormat.UInt32));
+        }
+
+        [Test]
+        public void ScriptedImporter_ProxyModeCreatesSelectableProxyNodes()
+        {
+            ImportWithPartMode(PmxPartHierarchyMode.ProxyNodes);
+            GameObject root = AssetDatabase.LoadAssetAtPath<GameObject>(ModelPath);
+            PmxModelPartsController controller = root.GetComponent<PmxModelPartsController>();
+            Assert.That(controller.Mode, Is.EqualTo(PmxPartHierarchyMode.ProxyNodes));
+            Assert.That(controller.CanonicalRenderer, Is.Not.Null);
+            Assert.That(controller.Renderers.Length, Is.EqualTo(1));
+            Assert.That(controller.Parts.Length, Is.EqualTo(2));
+            Assert.That(controller.Parts[0].TargetRenderer,
+                Is.EqualTo(controller.CanonicalRenderer));
+            Assert.That(controller.Parts[0].gameObject.name,
+                Is.EqualTo("PMX Part 000000 - Duplicate Display Name"));
+            controller.ShowOnlyPart(1);
+            Assert.That(controller.CanonicalRenderer.sharedMaterials.Length, Is.EqualTo(1));
+            controller.ShowAllParts();
+            Assert.That(controller.CanonicalRenderer.sharedMaterials.Length, Is.EqualTo(2));
+        }
+
+        [Test]
+        public void ScriptedImporter_SeparateModeCreatesOneRendererPerPart()
+        {
+            ImportWithPartMode(PmxPartHierarchyMode.SeparateRenderers);
+            GameObject root = AssetDatabase.LoadAssetAtPath<GameObject>(ModelPath);
+            PmxModelPartsController controller = root.GetComponent<PmxModelPartsController>();
+            Assert.That(controller.Mode, Is.EqualTo(PmxPartHierarchyMode.SeparateRenderers));
+            Assert.That(controller.CanonicalRenderer, Is.Null);
+            Assert.That(controller.Renderers.Length, Is.EqualTo(2));
+            Assert.That(controller.Parts.Length, Is.EqualTo(2));
+            for (int i = 0; i < controller.Renderers.Length; i++)
+            {
+                Assert.That(controller.Renderers[i].sharedMesh, Is.Not.Null);
+                Assert.That(controller.Renderers[i].sharedMesh.subMeshCount, Is.EqualTo(1));
+                Assert.That(controller.Renderers[i].sharedMaterials.Length, Is.EqualTo(1));
+                Assert.That(controller.Parts[i].TargetRenderer,
+                    Is.EqualTo(controller.Renderers[i]));
+            }
+            controller.ShowOnlyPart(1);
+            Assert.That(controller.Renderers[0].enabled, Is.False);
+            Assert.That(controller.Renderers[1].enabled, Is.True);
+            controller.ShowAllParts();
+            Assert.That(controller.Renderers.All(value => value.enabled), Is.True);
+        }
+
+        private void ImportWithPartMode(PmxPartHierarchyMode mode)
+        {
+            File.WriteAllBytes(ToAbsolutePath(ModelPath), PmxStaticImportFixtureBuilder.Build());
+            AssetDatabase.ImportAsset(ModelPath,
+                ImportAssetOptions.ForceSynchronousImport | ImportAssetOptions.ForceUpdate);
+            var importer = (PmxScriptedImporter)AssetImporter.GetAtPath(ModelPath);
+            var serialized = new SerializedObject(importer);
+            SerializedProperty modeProperty = serialized.FindProperty(
+                "settings.partHierarchyMode");
+            Assert.That(modeProperty, Is.Not.Null);
+            modeProperty.enumValueIndex = (int)mode;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            AssetDatabase.ImportAsset(ModelPath,
+                ImportAssetOptions.ForceSynchronousImport | ImportAssetOptions.ForceUpdate);
         }
 
         private static string[] GetStableSubAssetLocalIds(string assetPath)
